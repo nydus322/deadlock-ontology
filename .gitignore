@@ -11,8 +11,8 @@ __pycache__/
 tools/vrf/
 
 # Local tooling config
-.claude/settings.local.json
-.claude/*.lock
+.claude/
+Knowledge/
 
 # OS
 .DS_Store

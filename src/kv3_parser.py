@@ -9,10 +9,10 @@ Outputs (written to outputs/, never printed inline):
   - unknowns.jsonl
   - rubric.md
 
-Hard rules (CLAUDE.md):
+Hard rules:
   - Never read .vdata content into stdout
   - All file reading goes through this module
-  - Preserve the "Modifer" typo verbatim
+  - Preserve the "Modifer" typo verbatim (matches Valve's internal field name)
   - Quarantine over delete
 """
 

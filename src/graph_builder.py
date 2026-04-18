@@ -1348,15 +1348,6 @@ def main():
     print("\n[5/5] Generating hero Turtles (A)...")
     shapes_path = BASE_DIR / "src" / "nydus.shacl.ttl"
 
-    # Keep legacy top-level Abrams + Infernus outputs for back-compat with proof.py
-    for hero_key, filename in [("hero_atlas", "abrams.ttl"),
-                                ("hero_inferno", "infernus.ttl")]:
-        ttl = generate_turtle(heroes_data, abilities_data, loc, hero_key=hero_key)
-        out_path = OUTPUTS_DIR / filename
-        out_path.write_text(ttl, encoding="utf-8")
-        triples = ttl.count(" ;") + ttl.count(" .")
-        print(f"      A: {filename}  (~{triples} triples)")
-
     # All ACTIVE heroes -> outputs/heroes/{codename}.ttl
     heroes_dir = OUTPUTS_DIR / "heroes"
     heroes_dir.mkdir(exist_ok=True)

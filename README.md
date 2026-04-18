@@ -2,9 +2,7 @@
 
 A navigable knowledge graph of every active **Deadlock** hero's abilities, upgrades, and stat scaling — built directly from Valve's `.vdata` files.
 
-**[Open Nydus in your browser →](outputs/nydus.html)** (single self-contained HTML, 3 MB)
-
-![Nydus screenshot placeholder — open outputs/nydus.html](outputs/viewer/og-preview.png)
+**[Open Nydus in your browser →](https://nydus322.github.io/deadlock-ontology/outputs/nydus.html)** (single self-contained HTML, ~3 MB)
 
 - 38 active heroes
 - Ability → stat scaling paths (e.g. *Infernus's Afterburn → Spirit Power*)
@@ -59,7 +57,6 @@ Every typed resource carries `rdfs:label` resolved from Deadlock's English local
 - `src/bundle.py` — inlines everything into `nydus.html`
 - `outputs/heroes/*.ttl` — 38 hero Turtles (the canonical data)
 - `outputs/nydus.html` — shipped single-file viewer
-- `Knowledge/` — design notes and heuristics
 
 ## License
 
