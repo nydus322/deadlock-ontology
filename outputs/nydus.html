@@ -480,9 +480,11 @@ body.dev-mode .dev-only.inspector-iri { display: flex !important; }
 body:not(.view-graph) .graph-only { display: none !important; }
 body.view-graph #hero-card { display: none !important; }
 
-/* In card mode the main grid collapses to a single column so the hero card
-   fills the viewport. In graph mode the classic three-column grid returns. */
-body.view-card main {
+/* Simple-mode layouts collapse to a single column. The three-column grid
+   (left filters + graph + right inspector) only returns when dev mode is
+   explicitly on — those columns are for RDF eyes. */
+body.view-card main,
+body.view-graph:not(.dev-mode) main {
   grid-template-columns: 1fr;
 }
 
@@ -728,6 +730,32 @@ body.view-card main {
   text-align: right;
 }
 
+/* ============================================================
+   Map view (simple graph)
+   ============================================================ */
+
+body.view-graph #graph {
+  position: relative;
+  background:
+    radial-gradient(ellipse at center, var(--hero-accent-soft), transparent 60%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-elev) 100%);
+}
+
+.graph-caption {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--fg-muted);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  pointer-events: none;
+  opacity: 0.55;
+  z-index: 5;
+}
+body:not(.view-graph) .graph-caption { display: none; }
+
 @keyframes hc-fade-in {
   from { opacity: 0; transform: translateY(-6px); }
   to   { opacity: 1; transform: translateY(0); }
@@ -776,10 +804,10 @@ body.view-card main {
       <button id="btn-share" title="Copy shareable link">Share</button>
       <div class="view-toggle" role="tablist" aria-label="View mode">
         <button id="btn-view-card" class="view-toggle-btn active" data-view="card">Card</button>
-        <button id="btn-view-graph" class="view-toggle-btn" data-view="graph">Graph</button>
+        <button id="btn-view-graph" class="view-toggle-btn" data-view="graph">Map</button>
       </div>
       <button id="btn-kit-mode" class="graph-only dev-only" title="Toggle signature-kit vs every-node view">Show all nodes</button>
-      <button id="btn-reset" class="graph-only dev-only">Reset</button>
+      <button id="btn-reset" class="graph-only" title="Re-layout">Re-layout</button>
       <button id="btn-expand-all" class="graph-only dev-only">Expand all</button>
       <button id="btn-collapse-all" class="graph-only dev-only">Collapse</button>
       <button id="btn-dev-mode" title="Reveal RDF internals: class filters, edge-predicate chips, ontology IRIs">Dev</button>
@@ -810,7 +838,7 @@ body.view-card main {
       </div>
     </section>
 
-    <aside id="sidebar-left" class="graph-only">
+    <aside id="sidebar-left" class="graph-only dev-only">
       <h3 class="dev-only">Filters</h3>
       <p class="hint dev-only">Toggle node classes on/off. Class legend doubles as filter.</p>
       <div id="class-filters" class="dev-only"></div>
@@ -821,9 +849,11 @@ body.view-card main {
       <ul id="node-list"></ul>
     </aside>
 
-    <div id="graph" class="graph-only"></div>
+    <div id="graph" class="graph-only">
+      <div id="graph-caption" class="graph-caption">Hover a line to see its role &middot; Click a node to focus</div>
+    </div>
 
-    <aside id="sidebar-right" class="graph-only">
+    <aside id="sidebar-right" class="graph-only dev-only">
       <div id="inspector-empty">
         <h3>Inspector</h3>
         <p class="hint">Click a node to see its triples, incoming and outgoing edges, and provenance.</p>
@@ -11026,9 +11056,9 @@ module.exports = __WEBPACK_EXTERNAL_MODULE__140__;
     "Stage", "BlankNode", "Resource",
   ];
   const CLASS_SIZE = {
-    Hero: 62, Ability: 44, PropertyCategory: 34, Stat: 34, Slot: 26,
-    ScaleFunction: 30, ModifierValue: 26, AbilityProperty: 20,
-    AbilityUpgrade: 18, Stage: 22, BlankNode: 16, Resource: 20,
+    Hero: 96, Ability: 68, PropertyCategory: 36, Stat: 34, Slot: 26,
+    ScaleFunction: 30, ModifierValue: 26, AbilityProperty: 32,
+    AbilityUpgrade: 24, Stage: 22, BlankNode: 16, Resource: 20,
   };
 
   const state = {
@@ -11064,75 +11094,123 @@ module.exports = __WEBPACK_EXTERNAL_MODULE__140__;
   // ---- Cytoscape --------------------------------------------------------------
 
   function makeCy(elements) {
+    // Per-hero accent drives the Map palette: hero node + primary connections
+    // all adopt the same colour, making the map feel authored rather than generic.
+    const accent = HERO_ACCENT[state.currentHero] || DEFAULT_ACCENT;
     const styleSheet = [
       {
         selector: "node",
         style: {
-          "background-color": (n) => CLASS_COLORS[primaryClass(n.data("classes"))] || "#555",
+          "background-color": "#23211c",  // warm charcoal
           "label": "data(label)",
-          "color": "#c9d1d9",
-          "font-size": 9,
+          "color": "#f0e6d8",
+          "font-size": 12,
+          "font-family": '"Cinzel", Georgia, serif',
+          "font-weight": 500,
           "text-valign": "bottom",
-          "text-margin-y": 4,
-          "text-background-color": "#0d1117",
-          "text-background-opacity": 0.85,
-          "text-background-padding": 2,
+          "text-margin-y": 6,
+          "text-background-color": "#12100e",
+          "text-background-opacity": 0.9,
+          "text-background-padding": 4,
           "text-background-shape": "roundrectangle",
           "text-wrap": "wrap",
-          "text-max-width": 100,
+          "text-max-width": 140,
           "width":  (n) => CLASS_SIZE[primaryClass(n.data("classes"))] || 20,
           "height": (n) => CLASS_SIZE[primaryClass(n.data("classes"))] || 20,
-          "border-width": 1,
-          "border-color": "#1f2630",
-          "transition-property": "opacity, border-color, border-width",
-          "transition-duration": "150ms",
+          "border-width": 2,
+          "border-color": "#3b2f23",
+          "transition-property": "opacity, border-color, border-width, background-color",
+          "transition-duration": "180ms",
         },
       },
-      { selector: "node.BlankNode", style: { "shape": "round-rectangle" } },
-      { selector: "node.Hero",             style: { "shape": "star",    "font-size": 12, "text-margin-y": 6 } },
-      { selector: "node.Ability",          style: { "shape": "round-hexagon", "font-size": 11 } },
-      { selector: "node.PropertyCategory", style: { "shape": "round-diamond" } },
-      { selector: "node.Stat",             style: { "shape": "round-diamond" } },
+      // Hero sits at the centre and wears the hero accent.
+      { selector: "node.Hero", style: {
+          "background-color": accent,
+          "border-color": accent,
+          "shape": "ellipse",
+          "font-size": 20,
+          "text-margin-y": 10,
+          "color": "#f0e6d8",
+      }},
+      { selector: "node.Ability", style: {
+          "shape": "round-rectangle",
+          "font-size": 15,
+          "border-color": accent,
+          "border-width": 2,
+      }},
+      { selector: "node.AbilityProperty", style: {
+          "shape": "ellipse",
+          "background-color": "#1a1712",
+          "border-color": "#60503f",
+          "font-size": 11,
+      }},
+      { selector: "node.AbilityUpgrade", style: {
+          "shape": "round-rectangle",
+          "background-color": "#1a1712",
+          "border-color": "#60503f",
+          "font-size": 10,
+      }},
+      { selector: "node.Stat", style: {
+          "shape": "round-diamond",
+          "background-color": "#1a1712",
+          "border-color": "#a3907a",
+          "font-size": 11,
+      }},
       { selector: "node.Slot",             style: { "shape": "round-triangle" } },
       { selector: "node.ScaleFunction",    style: { "shape": "round-pentagon" } },
       { selector: "node.ModifierValue",    style: { "shape": "round-octagon" } },
+      { selector: "node.BlankNode", style: { "shape": "round-rectangle" } },
       { selector: "node:selected", style: {
-          "border-color": "#ff9d47", "border-width": 3,
+          "border-color": accent, "border-width": 4,
       }},
       { selector: "node.hidden", style: { "display": "none" } },
       { selector: "node.collapsed", style: { "opacity": 0.08 } },
       {
         selector: "edge",
         style: {
-          "width": 1,
-          "line-color": "#30363d",
-          "target-arrow-color": "#30363d",
-          "target-arrow-shape": "triangle",
-          "curve-style": "bezier",
-          "opacity": 0.6,
-          "label": "data(label)",
-          "font-size": 8,
-          "color": "#8b949e",
-          "text-background-color": "#0d1117",
+          "width": 1.5,
+          "line-color": "#3b2f23",
+          "target-arrow-color": "#3b2f23",
+          "target-arrow-shape": "none",
+          "curve-style": "straight",
+          "opacity": 0.7,
+          // No permanent label on edges — it reads as "what does this arrow
+          // mean" noise for non-RDF people. Labels appear on hover only.
+          "label": "",
+          "font-size": 9,
+          "color": "#a3907a",
+          "text-background-color": "#12100e",
           "text-background-opacity": 0.9,
-          "text-background-padding": 1,
+          "text-background-padding": 2,
           "text-rotation": "autorotate",
           "text-opacity": 0,
           "transition-property": "opacity, line-color, width, text-opacity",
-          "transition-duration": "120ms",
+          "transition-duration": "140ms",
         },
       },
-      { selector: "edge.scalesStat",            style: { "line-color": "#9b6dff", "target-arrow-color": "#9b6dff", "width": 1.6, "opacity": 0.85 } },
-      { selector: "edge.primaryCategory",       style: { "line-color": "#c084fc", "target-arrow-color": "#c084fc", "opacity": 0.7 } },
-      { selector: "edge.secondaryCategory",     style: { "line-color": "#c084fc", "target-arrow-color": "#c084fc", "line-style": "dashed", "opacity": 0.6 } },
-      { selector: "edge.hasProperty",           style: { "line-color": "#484f58", "target-arrow-color": "#484f58" } },
-      { selector: "edge.hasUpgrade",            style: { "line-color": "#6e7681", "target-arrow-color": "#6e7681" } },
-      { selector: "edge.hasAbilityInSlot",      style: { "line-color": "#79c0ff", "target-arrow-color": "#79c0ff" } },
-      { selector: "edge.providesModifierType",  style: { "line-color": "#d2a8ff", "target-arrow-color": "#d2a8ff" } },
-      { selector: "edge:selected", style: { "line-color": "#ff9d47", "target-arrow-color": "#ff9d47", "width": 2.5, "text-opacity": 1 } },
+      // Signature edges (hero -> ability) render in the hero accent so the
+      // kit reads as a constellation around the hero.
+      { selector: "edge.hasAbilityInSlot", style: {
+          "line-color": accent,
+          "width": 2,
+          "opacity": 0.8,
+      }},
+      { selector: "edge.hasProperty", style: { "line-color": "#60503f" } },
+      { selector: "edge.hasUpgrade",  style: { "line-color": "#3b2f23", "line-style": "dashed" } },
+      { selector: "edge.scalesStat", style: {
+          "line-color": "#d89b4a",
+          "target-arrow-shape": "triangle",
+          "target-arrow-color": "#d89b4a",
+          "opacity": 0.9,
+      }},
+      { selector: "edge:selected", style: {
+          "line-color": accent, "target-arrow-color": accent,
+          "width": 3, "text-opacity": 1,
+      }},
       { selector: "edge.hidden", style: { "display": "none" } },
       { selector: "edge.collapsed", style: { "opacity": 0.05 } },
-      { selector: ".highlighted", style: { "text-opacity": 1 } },
+      // Only show edge label when hovered (handled below via class toggle).
+      { selector: "edge.highlighted", style: { "label": "data(label)", "text-opacity": 1 } },
     ];
 
     const cy = cytoscape({
@@ -11897,6 +11975,71 @@ module.exports = __WEBPACK_EXTERNAL_MODULE__140__;
     render("");
   }
 
+  // ---- Topology synthesis -----------------------------------------------------
+
+  // The raw RDF topology is Hero -> hasAbilityInSlot bnode -> {slot, ability},
+  // which renders in Cytoscape as a bnode between each hero and slot. The
+  // user's mental model is Hero -> Slot -> Ability: synthesize that by
+  // removing the bnode intermediary and patching hero -> slot and slot ->
+  // ability edges in its place. All other RDF structure (ability -> properties,
+  // property -> scalesStat, etc.) is preserved.
+  function synthesizeKitTopology(graph) {
+    const nodeById = new Map(graph.nodes.map((n) => [n.data.id, n.data]));
+    const outgoing = new Map();
+    graph.edges.forEach((e) => {
+      const s = e.data.source, t = e.data.target, p = e.data.label;
+      if (!outgoing.has(s)) outgoing.set(s, []);
+      outgoing.get(s).push([t, p]);
+    });
+    const heroNode = graph.nodes.find((n) => (n.data.classes || "").split(/\s+/).includes("Hero"));
+    if (!heroNode) return { nodes: graph.nodes, edges: graph.edges };
+    const heroId = heroNode.data.id;
+
+    const bnodeIds = new Set();
+    const syntheticEdges = [];
+
+    (outgoing.get(heroId) || []).forEach(([bn, pred]) => {
+      if (pred !== "hasAbilityInSlot") return;
+      const bnOuts = outgoing.get(bn) || [];
+      const slotEdge = bnOuts.find(([, p]) => p === "slot");
+      const abEdge   = bnOuts.find(([, p]) => p === "ability");
+      if (!slotEdge || !abEdge) return;
+      bnodeIds.add(bn);
+      const slotId = slotEdge[0];
+      const abId = abEdge[0];
+      const slotLabel = nodeById.get(slotId)?.label || "slot";
+      const abLabel = nodeById.get(abId)?.label || "ability";
+      // hero -> slot (labelled with the slot name for readability)
+      syntheticEdges.push({
+        data: {
+          id: `syn-hs-${slotId}`,
+          source: heroId,
+          target: slotId,
+          label: slotLabel,
+          classes: "hasSlot synthetic",
+        },
+      });
+      // slot -> ability (labelled with the ability name)
+      syntheticEdges.push({
+        data: {
+          id: `syn-sa-${slotId}-${abId}`,
+          source: slotId,
+          target: abId,
+          label: abLabel,
+          classes: "filledBy synthetic",
+        },
+      });
+    });
+
+    // Drop the bnodes and any edge touching them — they're replaced by the
+    // synthetic pair above.
+    const nodes = graph.nodes.filter((n) => !bnodeIds.has(n.data.id));
+    const edges = graph.edges
+      .filter((e) => !bnodeIds.has(e.data.source) && !bnodeIds.has(e.data.target))
+      .concat(syntheticEdges);
+    return { nodes, edges };
+  }
+
   // ---- Hero-card data extraction ----------------------------------------------
 
   // Turn the flat per-hero graph JSON into a structured "kit" object:
@@ -12229,7 +12372,10 @@ module.exports = __WEBPACK_EXTERNAL_MODULE__140__;
       if (n.data.shortId) state.shortIdToId.set(n.data.shortId, n.data.id);
     });
 
-    state.cy = makeCy([...state.graph.nodes, ...state.graph.edges]);
+    // Synthesize Hero -> Slot -> Ability topology by collapsing the RDF
+    // hasAbilityInSlot blank nodes. This is what Cytoscape renders.
+    const topo = synthesizeKitTopology(state.graph);
+    state.cy = makeCy([...topo.nodes, ...topo.edges]);
     registerCyEvents();
 
     buildClassFilters();
@@ -12253,10 +12399,18 @@ module.exports = __WEBPACK_EXTERNAL_MODULE__140__;
     const sel = document.getElementById("hero-picker");
     if (sel.value !== codename) sel.value = codename;
 
+    // Hierarchical tree rooted at the hero: Hero -> Ability bindings ->
+    // Ability -> properties/upgrades. Reads as a family tree, not a cloud.
+    const rootNode = state.cy.getElementById(rootId());
     state.cy.layout({
-      name: "fcose", animate: false, randomize: true,
-      nodeSeparation: 100, idealEdgeLength: 90,
-      nodeRepulsion: 8000, gravity: 0.2, numIter: 2000, padding: 40,
+      name: "breadthfirst",
+      roots: rootNode,
+      directed: true,
+      padding: 48,
+      spacingFactor: 1.4,
+      animate: false,
+      circle: false,
+      grid: false,
     }).run();
 
     if (!fromHash) setHash("");
@@ -12343,9 +12497,15 @@ module.exports = __WEBPACK_EXTERNAL_MODULE__140__;
       window.addEventListener("hashchange", applyHash);
 
       document.getElementById("btn-reset").addEventListener("click", () => {
+        const rn = state.cy.getElementById(rootId());
         state.cy.layout({
-          name: "fcose", animate: true, animationDuration: 500,
-          randomize: false, idealEdgeLength: 90, nodeRepulsion: 8000,
+          name: "breadthfirst",
+          roots: rn,
+          directed: true,
+          padding: 48,
+          spacingFactor: 1.4,
+          animate: true,
+          animationDuration: 400,
         }).run();
         state.cy.fit(null, 40);
       });
@@ -12355,9 +12515,11 @@ module.exports = __WEBPACK_EXTERNAL_MODULE__140__;
         state.kitMode = !state.kitMode;
         if (state.kitMode) expandKit();
         applyKitMode();
+        const rn = state.cy.getElementById(rootId());
         state.cy.layout({
-          name: "fcose", animate: true, animationDuration: 400,
-          randomize: false, idealEdgeLength: 90, nodeRepulsion: 8000,
+          name: "breadthfirst", roots: rn, directed: true,
+          padding: 48, spacingFactor: 1.4,
+          animate: true, animationDuration: 400,
         }).run();
         state.cy.fit(null, 40);
       });

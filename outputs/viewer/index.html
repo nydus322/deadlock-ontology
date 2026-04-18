@@ -30,10 +30,10 @@
       <button id="btn-share" title="Copy shareable link">Share</button>
       <div class="view-toggle" role="tablist" aria-label="View mode">
         <button id="btn-view-card" class="view-toggle-btn active" data-view="card">Card</button>
-        <button id="btn-view-graph" class="view-toggle-btn" data-view="graph">Graph</button>
+        <button id="btn-view-graph" class="view-toggle-btn" data-view="graph">Map</button>
       </div>
       <button id="btn-kit-mode" class="graph-only dev-only" title="Toggle signature-kit vs every-node view">Show all nodes</button>
-      <button id="btn-reset" class="graph-only dev-only">Reset</button>
+      <button id="btn-reset" class="graph-only" title="Re-layout">Re-layout</button>
       <button id="btn-expand-all" class="graph-only dev-only">Expand all</button>
       <button id="btn-collapse-all" class="graph-only dev-only">Collapse</button>
       <button id="btn-dev-mode" title="Reveal RDF internals: class filters, edge-predicate chips, ontology IRIs">Dev</button>
@@ -64,7 +64,7 @@
       </div>
     </section>
 
-    <aside id="sidebar-left" class="graph-only">
+    <aside id="sidebar-left" class="graph-only dev-only">
       <h3 class="dev-only">Filters</h3>
       <p class="hint dev-only">Toggle node classes on/off. Class legend doubles as filter.</p>
       <div id="class-filters" class="dev-only"></div>
@@ -75,9 +75,11 @@
       <ul id="node-list"></ul>
     </aside>
 
-    <div id="graph" class="graph-only"></div>
+    <div id="graph" class="graph-only">
+      <div id="graph-caption" class="graph-caption">Hover a line to see its role &middot; Click a node to focus</div>
+    </div>
 
-    <aside id="sidebar-right" class="graph-only">
+    <aside id="sidebar-right" class="graph-only dev-only">
       <div id="inspector-empty">
         <h3>Inspector</h3>
         <p class="hint">Click a node to see its triples, incoming and outgoing edges, and provenance.</p>

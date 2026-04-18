@@ -465,9 +465,11 @@ body.dev-mode .dev-only.inspector-iri { display: flex !important; }
 body:not(.view-graph) .graph-only { display: none !important; }
 body.view-graph #hero-card { display: none !important; }
 
-/* In card mode the main grid collapses to a single column so the hero card
-   fills the viewport. In graph mode the classic three-column grid returns. */
-body.view-card main {
+/* Simple-mode layouts collapse to a single column. The three-column grid
+   (left filters + graph + right inspector) only returns when dev mode is
+   explicitly on — those columns are for RDF eyes. */
+body.view-card main,
+body.view-graph:not(.dev-mode) main {
   grid-template-columns: 1fr;
 }
 
@@ -712,6 +714,32 @@ body.view-card main {
   font-size: 12px;
   text-align: right;
 }
+
+/* ============================================================
+   Map view (simple graph)
+   ============================================================ */
+
+body.view-graph #graph {
+  position: relative;
+  background:
+    radial-gradient(ellipse at center, var(--hero-accent-soft), transparent 60%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-elev) 100%);
+}
+
+.graph-caption {
+  position: absolute;
+  bottom: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  color: var(--fg-muted);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  pointer-events: none;
+  opacity: 0.55;
+  z-index: 5;
+}
+body:not(.view-graph) .graph-caption { display: none; }
 
 @keyframes hc-fade-in {
   from { opacity: 0; transform: translateY(-6px); }
