@@ -569,15 +569,26 @@
   }
 
   function maybeShowOnboarding() {
+    const overlay = document.getElementById("onboarding");
+    const card = overlay?.querySelector(".onboarding-card");
     try {
       if (!localStorage.getItem("nydus.onboarded")) {
-        document.getElementById("onboarding").hidden = false;
+        overlay.hidden = false;
       }
     } catch (_) {}
-    document.getElementById("btn-onboarding-close").onclick = () => {
-      document.getElementById("onboarding").hidden = true;
+    const dismiss = () => {
+      overlay.hidden = true;
       try { localStorage.setItem("nydus.onboarded", "1"); } catch (_) {}
     };
+    document.getElementById("btn-onboarding-close").onclick = dismiss;
+    // Click backdrop (outside the card) dismisses
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) dismiss();
+    });
+    // ESC dismisses
+    document.addEventListener("keydown", (e) => {
+      if (!overlay.hidden && e.key === "Escape") dismiss();
+    });
   }
 
   // ---- Init -------------------------------------------------------------------
@@ -618,7 +629,6 @@
         navigator.clipboard.writeText(url).then(() => toast("Link copied")).catch(() => toast(url));
       });
 
-      maybeShowOnboarding();
     } catch (err) {
       console.error(err);
       const g = document.getElementById("graph");

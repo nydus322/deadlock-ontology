@@ -444,19 +444,6 @@ aside h4 {
     </div>
   </header>
 
-  <div id="onboarding" class="onboarding" hidden>
-    <div class="onboarding-card">
-      <h2>Welcome to <span class="nydus-mark">Nydus</span></h2>
-      <p>A navigable knowledge graph of Deadlock's hero abilities — built from the game's own data files.</p>
-      <ul>
-        <li><b>Pick a hero</b> from the dropdown up top (or use the URL hash <code>#hero/Infernus</code>).</li>
-        <li><b>Click a node</b> to inspect its triples and walk its neighbors.</li>
-        <li><b>Double-click</b> a node to collapse its expansion.</li>
-        <li><b>Share</b> copies a URL that deep-links to whatever you're viewing.</li>
-      </ul>
-      <button id="btn-onboarding-close">Got it</button>
-    </div>
-  </div>
 
   <main>
     <aside id="sidebar-left">
@@ -11109,15 +11096,26 @@ module.exports = __WEBPACK_EXTERNAL_MODULE__140__;
   }
 
   function maybeShowOnboarding() {
+    const overlay = document.getElementById("onboarding");
+    const card = overlay?.querySelector(".onboarding-card");
     try {
       if (!localStorage.getItem("nydus.onboarded")) {
-        document.getElementById("onboarding").hidden = false;
+        overlay.hidden = false;
       }
     } catch (_) {}
-    document.getElementById("btn-onboarding-close").onclick = () => {
-      document.getElementById("onboarding").hidden = true;
+    const dismiss = () => {
+      overlay.hidden = true;
       try { localStorage.setItem("nydus.onboarded", "1"); } catch (_) {}
     };
+    document.getElementById("btn-onboarding-close").onclick = dismiss;
+    // Click backdrop (outside the card) dismisses
+    overlay.addEventListener("click", (e) => {
+      if (e.target === overlay) dismiss();
+    });
+    // ESC dismisses
+    document.addEventListener("keydown", (e) => {
+      if (!overlay.hidden && e.key === "Escape") dismiss();
+    });
   }
 
   // ---- Init -------------------------------------------------------------------
@@ -11158,7 +11156,6 @@ module.exports = __WEBPACK_EXTERNAL_MODULE__140__;
         navigator.clipboard.writeText(url).then(() => toast("Link copied")).catch(() => toast(url));
       });
 
-      maybeShowOnboarding();
     } catch (err) {
       console.error(err);
       const g = document.getElementById("graph");
