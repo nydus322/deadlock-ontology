@@ -1,13 +1,20 @@
 :root {
-  --bg:            #0d1117;
-  --bg-elev:       #161b22;
-  --bg-elev-2:     #1f2630;
-  --border:        #30363d;
-  --fg:            #c9d1d9;
-  --fg-muted:      #8b949e;
-  --fg-soft:       #484f58;
-  --accent:        #58a6ff;
-  --accent-warm:   #ff9d47;
+  /* Warm charcoal palette for the hero-card debut. The original cool slate
+     palette is kept below for the legacy graph-view mode. */
+  --bg:            #12100e;   /* warm near-black, parchment-shadow */
+  --bg-elev:       #1a1712;
+  --bg-elev-2:     #231d17;
+  --border:        #3b2f23;
+  --fg:            #f0e6d8;   /* warm parchment */
+  --fg-muted:      #a3907a;
+  --fg-soft:       #60503f;
+  --accent:        #d89b4a;   /* brass */
+  --accent-warm:   #e8743a;   /* sodium-lamp amber */
+  --accent-deep:   #7a1f1a;   /* oxblood */
+
+  /* Per-hero accent (overridden by JS on hero switch). Default = amber. */
+  --hero-accent:       #e8743a;
+  --hero-accent-soft:  #e8743a33;
 
   /* Category palette (mirrors proof.py CAT_COLORS) */
   --cat-cooldown: #5b9bd5;
@@ -421,6 +428,285 @@ body.dev-mode .dev-only.inspector-iri { display: flex !important; }
 #btn-dev-mode.active {
   background: var(--accent-warm, #ff9d47);
   color: #0d1117;
+}
+
+/* ============================================================
+   View-mode toggle (Card / Graph) + graph-only chrome visibility
+   ============================================================ */
+
+.view-toggle {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 0 4px;
+}
+.view-toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--fg-muted);
+  padding: 4px 12px;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  font-family: inherit;
+}
+.view-toggle-btn.active {
+  background: var(--hero-accent);
+  color: var(--bg);
+  font-weight: 600;
+}
+.view-toggle-btn:not(.active):hover {
+  background: var(--bg-elev-2);
+  color: var(--fg);
+}
+
+/* Graph-mode-only chrome (sidebars, control buttons) hidden when viewing card */
+body:not(.view-graph) .graph-only { display: none !important; }
+body.view-graph #hero-card { display: none !important; }
+
+/* In card mode the main grid collapses to a single column so the hero card
+   fills the viewport. In graph mode the classic three-column grid returns. */
+body.view-card main {
+  grid-template-columns: 1fr;
+}
+
+/* ============================================================
+   Hero card — the main debut view
+   ============================================================ */
+
+#hero-card {
+  overflow-y: auto;
+  padding: 48px 64px 80px;
+  background:
+    radial-gradient(ellipse at top, var(--hero-accent-soft), transparent 55%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-elev) 100%);
+}
+
+.hero-card-header {
+  text-align: center;
+  margin-bottom: 40px;
+  animation: hc-fade-in 500ms ease-out both;
+}
+
+#hc-hero-name {
+  font-family: "Cinzel", "Trajan Pro", "Cormorant Garamond", Georgia, serif;
+  font-size: 56px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  margin: 0;
+  color: var(--fg);
+  text-shadow: 0 0 32px var(--hero-accent-soft);
+}
+#hc-hero-name::before,
+#hc-hero-name::after {
+  content: "";
+  display: inline-block;
+  width: 72px;
+  height: 1px;
+  background: var(--hero-accent);
+  vertical-align: middle;
+  margin: 0 24px;
+  opacity: 0.7;
+}
+
+.hero-card-tags {
+  margin: 12px 0 0;
+  color: var(--fg-muted);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.hero-card-tags span + span::before {
+  content: "·";
+  margin: 0 10px;
+  color: var(--hero-accent);
+  font-weight: bold;
+}
+
+.hero-card-body {
+  display: grid;
+  grid-template-columns: 1fr 240px;
+  gap: 48px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.ability-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+.ability-card {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--hero-accent);
+  border-radius: 4px;
+  padding: 20px 20px 16px;
+  position: relative;
+  transition: transform 160ms ease-out, box-shadow 160ms ease-out, border-color 160ms;
+  animation: hc-card-settle 400ms ease-out both;
+}
+.ability-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px var(--hero-accent);
+}
+
+/* Stagger card entrance by nth-child */
+.ability-card:nth-child(1) { animation-delay: 0ms; }
+.ability-card:nth-child(2) { animation-delay: 80ms; }
+.ability-card:nth-child(3) { animation-delay: 160ms; }
+.ability-card:nth-child(4) { animation-delay: 240ms; }
+.ability-card:nth-child(5) { animation-delay: 320ms; }
+
+.ability-slot {
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--hero-accent);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.ability-name {
+  font-family: "Cinzel", Georgia, serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--fg);
+  margin: 0 0 14px;
+  letter-spacing: 0.02em;
+}
+
+.ability-stats {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 14px;
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+.ability-stats dt {
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 10px;
+  align-self: center;
+}
+.ability-stats dd {
+  margin: 0;
+  font-family: "Fira Code", Menlo, Consolas, monospace;
+  color: var(--fg);
+  font-size: 13px;
+}
+.ability-stats dd .scales-with {
+  color: var(--hero-accent);
+  font-size: 10px;
+  margin-left: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-family: inherit;
+}
+
+.ability-upgrades {
+  display: flex;
+  gap: 6px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+}
+.tier-stamp {
+  flex: 1;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 6px 6px 5px;
+  text-align: center;
+  font-size: 10px;
+  line-height: 1.3;
+  color: var(--fg-muted);
+  position: relative;
+}
+.tier-stamp .tier-label {
+  display: block;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: var(--hero-accent);
+  font-weight: 700;
+  margin-bottom: 3px;
+}
+.tier-stamp .tier-value {
+  color: var(--fg);
+  font-family: "Fira Code", Menlo, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 600;
+}
+.tier-stamp .tier-prop {
+  display: block;
+  font-size: 9px;
+  color: var(--fg-soft);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Primary-weapon card spans full row for visual differentiation */
+.ability-card.weapon-card {
+  grid-column: 1 / -1;
+  border-top-color: var(--accent-warm);
+  background: linear-gradient(180deg, var(--bg-elev) 0%, var(--bg-elev-2) 100%);
+}
+.ability-card.weapon-card .ability-slot { color: var(--accent-warm); }
+.ability-card.weapon-card .tier-stamp .tier-label { color: var(--accent-warm); }
+
+/* Stats spine (right column) */
+.stats-spine {
+  padding: 12px 0 0;
+  animation: hc-fade-in 500ms 200ms ease-out both;
+}
+.stats-spine section {
+  margin-bottom: 28px;
+}
+.stats-spine h4 {
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--hero-accent);
+  margin: 0 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.stats-spine dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 10px;
+}
+.stats-spine dt {
+  color: var(--fg-muted);
+  font-size: 11px;
+  align-self: center;
+}
+.stats-spine dd {
+  margin: 0;
+  color: var(--fg);
+  font-family: "Fira Code", Menlo, Consolas, monospace;
+  font-size: 12px;
+  text-align: right;
+}
+
+@keyframes hc-fade-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes hc-card-settle {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 900px) {
+  #hero-card { padding: 24px 20px 60px; }
+  #hc-hero-name { font-size: 40px; }
+  #hc-hero-name::before, #hc-hero-name::after { width: 36px; margin: 0 12px; }
+  .hero-card-body { grid-template-columns: 1fr; }
 }
 
 /* hero-tag chips in the inspector */

@@ -14,15 +14,22 @@
 
 <style>
 :root {
-  --bg:            #0d1117;
-  --bg-elev:       #161b22;
-  --bg-elev-2:     #1f2630;
-  --border:        #30363d;
-  --fg:            #c9d1d9;
-  --fg-muted:      #8b949e;
-  --fg-soft:       #484f58;
-  --accent:        #58a6ff;
-  --accent-warm:   #ff9d47;
+  /* Warm charcoal palette for the hero-card debut. The original cool slate
+     palette is kept below for the legacy graph-view mode. */
+  --bg:            #12100e;   /* warm near-black, parchment-shadow */
+  --bg-elev:       #1a1712;
+  --bg-elev-2:     #231d17;
+  --border:        #3b2f23;
+  --fg:            #f0e6d8;   /* warm parchment */
+  --fg-muted:      #a3907a;
+  --fg-soft:       #60503f;
+  --accent:        #d89b4a;   /* brass */
+  --accent-warm:   #e8743a;   /* sodium-lamp amber */
+  --accent-deep:   #7a1f1a;   /* oxblood */
+
+  /* Per-hero accent (overridden by JS on hero switch). Default = amber. */
+  --hero-accent:       #e8743a;
+  --hero-accent-soft:  #e8743a33;
 
   /* Category palette (mirrors proof.py CAT_COLORS) */
   --cat-cooldown: #5b9bd5;
@@ -438,6 +445,285 @@ body.dev-mode .dev-only.inspector-iri { display: flex !important; }
   color: #0d1117;
 }
 
+/* ============================================================
+   View-mode toggle (Card / Graph) + graph-only chrome visibility
+   ============================================================ */
+
+.view-toggle {
+  display: inline-flex;
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  overflow: hidden;
+  margin: 0 4px;
+}
+.view-toggle-btn {
+  background: transparent;
+  border: none;
+  color: var(--fg-muted);
+  padding: 4px 12px;
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  cursor: pointer;
+  font-family: inherit;
+}
+.view-toggle-btn.active {
+  background: var(--hero-accent);
+  color: var(--bg);
+  font-weight: 600;
+}
+.view-toggle-btn:not(.active):hover {
+  background: var(--bg-elev-2);
+  color: var(--fg);
+}
+
+/* Graph-mode-only chrome (sidebars, control buttons) hidden when viewing card */
+body:not(.view-graph) .graph-only { display: none !important; }
+body.view-graph #hero-card { display: none !important; }
+
+/* In card mode the main grid collapses to a single column so the hero card
+   fills the viewport. In graph mode the classic three-column grid returns. */
+body.view-card main {
+  grid-template-columns: 1fr;
+}
+
+/* ============================================================
+   Hero card — the main debut view
+   ============================================================ */
+
+#hero-card {
+  overflow-y: auto;
+  padding: 48px 64px 80px;
+  background:
+    radial-gradient(ellipse at top, var(--hero-accent-soft), transparent 55%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-elev) 100%);
+}
+
+.hero-card-header {
+  text-align: center;
+  margin-bottom: 40px;
+  animation: hc-fade-in 500ms ease-out both;
+}
+
+#hc-hero-name {
+  font-family: "Cinzel", "Trajan Pro", "Cormorant Garamond", Georgia, serif;
+  font-size: 56px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  margin: 0;
+  color: var(--fg);
+  text-shadow: 0 0 32px var(--hero-accent-soft);
+}
+#hc-hero-name::before,
+#hc-hero-name::after {
+  content: "";
+  display: inline-block;
+  width: 72px;
+  height: 1px;
+  background: var(--hero-accent);
+  vertical-align: middle;
+  margin: 0 24px;
+  opacity: 0.7;
+}
+
+.hero-card-tags {
+  margin: 12px 0 0;
+  color: var(--fg-muted);
+  font-size: 12px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+}
+.hero-card-tags span + span::before {
+  content: "·";
+  margin: 0 10px;
+  color: var(--hero-accent);
+  font-weight: bold;
+}
+
+.hero-card-body {
+  display: grid;
+  grid-template-columns: 1fr 240px;
+  gap: 48px;
+  max-width: 1280px;
+  margin: 0 auto;
+}
+
+.ability-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+  gap: 20px;
+}
+
+.ability-card {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--hero-accent);
+  border-radius: 4px;
+  padding: 20px 20px 16px;
+  position: relative;
+  transition: transform 160ms ease-out, box-shadow 160ms ease-out, border-color 160ms;
+  animation: hc-card-settle 400ms ease-out both;
+}
+.ability-card:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px var(--hero-accent);
+}
+
+/* Stagger card entrance by nth-child */
+.ability-card:nth-child(1) { animation-delay: 0ms; }
+.ability-card:nth-child(2) { animation-delay: 80ms; }
+.ability-card:nth-child(3) { animation-delay: 160ms; }
+.ability-card:nth-child(4) { animation-delay: 240ms; }
+.ability-card:nth-child(5) { animation-delay: 320ms; }
+
+.ability-slot {
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--hero-accent);
+  font-weight: 600;
+  margin-bottom: 6px;
+}
+.ability-name {
+  font-family: "Cinzel", Georgia, serif;
+  font-size: 22px;
+  font-weight: 600;
+  color: var(--fg);
+  margin: 0 0 14px;
+  letter-spacing: 0.02em;
+}
+
+.ability-stats {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 14px;
+  font-size: 12px;
+  margin-bottom: 12px;
+}
+.ability-stats dt {
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  font-size: 10px;
+  align-self: center;
+}
+.ability-stats dd {
+  margin: 0;
+  font-family: "Fira Code", Menlo, Consolas, monospace;
+  color: var(--fg);
+  font-size: 13px;
+}
+.ability-stats dd .scales-with {
+  color: var(--hero-accent);
+  font-size: 10px;
+  margin-left: 6px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-family: inherit;
+}
+
+.ability-upgrades {
+  display: flex;
+  gap: 6px;
+  padding-top: 12px;
+  border-top: 1px dashed var(--border);
+}
+.tier-stamp {
+  flex: 1;
+  background: var(--bg-elev-2);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  padding: 6px 6px 5px;
+  text-align: center;
+  font-size: 10px;
+  line-height: 1.3;
+  color: var(--fg-muted);
+  position: relative;
+}
+.tier-stamp .tier-label {
+  display: block;
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: var(--hero-accent);
+  font-weight: 700;
+  margin-bottom: 3px;
+}
+.tier-stamp .tier-value {
+  color: var(--fg);
+  font-family: "Fira Code", Menlo, Consolas, monospace;
+  font-size: 11px;
+  font-weight: 600;
+}
+.tier-stamp .tier-prop {
+  display: block;
+  font-size: 9px;
+  color: var(--fg-soft);
+  margin-top: 2px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* Primary-weapon card spans full row for visual differentiation */
+.ability-card.weapon-card {
+  grid-column: 1 / -1;
+  border-top-color: var(--accent-warm);
+  background: linear-gradient(180deg, var(--bg-elev) 0%, var(--bg-elev-2) 100%);
+}
+.ability-card.weapon-card .ability-slot { color: var(--accent-warm); }
+.ability-card.weapon-card .tier-stamp .tier-label { color: var(--accent-warm); }
+
+/* Stats spine (right column) */
+.stats-spine {
+  padding: 12px 0 0;
+  animation: hc-fade-in 500ms 200ms ease-out both;
+}
+.stats-spine section {
+  margin-bottom: 28px;
+}
+.stats-spine h4 {
+  font-size: 10px;
+  letter-spacing: 0.28em;
+  text-transform: uppercase;
+  color: var(--hero-accent);
+  margin: 0 0 10px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+}
+.stats-spine dl {
+  margin: 0;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 6px 10px;
+}
+.stats-spine dt {
+  color: var(--fg-muted);
+  font-size: 11px;
+  align-self: center;
+}
+.stats-spine dd {
+  margin: 0;
+  color: var(--fg);
+  font-family: "Fira Code", Menlo, Consolas, monospace;
+  font-size: 12px;
+  text-align: right;
+}
+
+@keyframes hc-fade-in {
+  from { opacity: 0; transform: translateY(-6px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+@keyframes hc-card-settle {
+  from { opacity: 0; transform: translateY(14px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+@media (max-width: 900px) {
+  #hero-card { padding: 24px 20px 60px; }
+  #hc-hero-name { font-size: 40px; }
+  #hc-hero-name::before, #hc-hero-name::after { width: 36px; margin: 0 12px; }
+  .hero-card-body { grid-template-columns: 1fr; }
+}
+
 /* hero-tag chips in the inspector */
 #props-tags-chips {
   display: flex;
@@ -462,23 +748,49 @@ body.dev-mode .dev-only.inspector-iri { display: flex !important; }
   <header>
     <div class="title">
       <span class="nydus-mark">Nydus</span>
-      <span class="subtitle">Deadlock ontology &middot; <span id="meta-summary">38 heroes &middot; click the picker</span></span>
+      <span class="subtitle">the Deadlock knowledge graph <span class="meta-summary-dev dev-only">&middot; <span id="meta-summary">38 heroes &middot; click the picker</span></span></span>
     </div>
     <div class="actions">
       <label class="hero-picker-label" for="hero-picker">Hero</label>
       <select id="hero-picker" class="hero-picker"></select>
       <button id="btn-share" title="Copy shareable link">Share</button>
-      <button id="btn-kit-mode" title="Toggle between signature-kit view and every-node view">Show all nodes</button>
-      <button id="btn-reset">Reset</button>
-      <button id="btn-expand-all">Expand all</button>
-      <button id="btn-collapse-all">Collapse</button>
-      <button id="btn-dev-mode" title="Show RDF class filters, edge-predicate chips, and ontology IRIs">Dev</button>
+      <div class="view-toggle" role="tablist" aria-label="View mode">
+        <button id="btn-view-card" class="view-toggle-btn active" data-view="card">Card</button>
+        <button id="btn-view-graph" class="view-toggle-btn" data-view="graph">Graph</button>
+      </div>
+      <button id="btn-kit-mode" class="graph-only dev-only" title="Toggle signature-kit vs every-node view">Show all nodes</button>
+      <button id="btn-reset" class="graph-only dev-only">Reset</button>
+      <button id="btn-expand-all" class="graph-only dev-only">Expand all</button>
+      <button id="btn-collapse-all" class="graph-only dev-only">Collapse</button>
+      <button id="btn-dev-mode" title="Reveal RDF internals: class filters, edge-predicate chips, ontology IRIs">Dev</button>
     </div>
   </header>
 
 
   <main>
-    <aside id="sidebar-left">
+    <!-- Hero card view (default). Populated from the same per-hero graph data
+         as the force-graph, but rendered as a legible kit layout. -->
+    <section id="hero-card" class="hero-card">
+      <header class="hero-card-header">
+        <h1 id="hc-hero-name"></h1>
+        <p id="hc-hero-tags" class="hero-card-tags"></p>
+      </header>
+      <div class="hero-card-body">
+        <div id="hc-ability-grid" class="ability-grid"></div>
+        <aside id="hc-stats-spine" class="stats-spine">
+          <section>
+            <h4>Core</h4>
+            <dl id="hc-stats-core"></dl>
+          </section>
+          <section>
+            <h4>Combat</h4>
+            <dl id="hc-stats-combat"></dl>
+          </section>
+        </aside>
+      </div>
+    </section>
+
+    <aside id="sidebar-left" class="graph-only">
       <h3 class="dev-only">Filters</h3>
       <p class="hint dev-only">Toggle node classes on/off. Class legend doubles as filter.</p>
       <div id="class-filters" class="dev-only"></div>
@@ -489,9 +801,9 @@ body.dev-mode .dev-only.inspector-iri { display: flex !important; }
       <ul id="node-list"></ul>
     </aside>
 
-    <div id="graph"></div>
+    <div id="graph" class="graph-only"></div>
 
-    <aside id="sidebar-right">
+    <aside id="sidebar-right" class="graph-only">
       <div id="inspector-empty">
         <h3>Inspector</h3>
         <p class="hint">Click a node to see its triples, incoming and outgoing edges, and provenance.</p>
@@ -10621,6 +10933,58 @@ module.exports = __WEBPACK_EXTERNAL_MODULE__140__;
     "slot/Signature3",
     "slot/Signature4",
   ];
+  const SLOT_DISPLAY_NAMES = {
+    "slot/WeaponPrimary": "Primary Weapon",
+    "slot/Signature1":    "Ability 1",
+    "slot/Signature2":    "Ability 2",
+    "slot/Signature3":    "Ability 3",
+    "slot/Signature4":    "Ultimate",
+  };
+
+  // Per-hero accent colour — pulled from each hero's in-game identity so the
+  // hero card wears their vibe. Fallback (below) is sodium-lamp amber.
+  // Codename keys match state.bundle.heroes[...].codename.
+  const HERO_ACCENT = {
+    hero_inferno:     "#e8743a", // Infernus — fire orange
+    hero_atlas:       "#c65a3f", // Abrams — rust red
+    hero_astro:       "#d9b15a", // Calico — gold
+    hero_bebop:       "#b88647", // Bebop — brass
+    hero_bookworm:    "#6e8cb8", // Mo & Krill-adj — steel blue
+    hero_chrono:      "#8f6fc4", // Paradox — violet
+    hero_doorman:     "#8a9bb0", // Doorman — slate
+    hero_drifter:     "#5a6f8f", // Drifter — cold grey
+    hero_dynamo:      "#7fb8d6", // Dynamo — electric cyan
+    hero_familiar:    "#9b6dff", // Pocket — purple
+    hero_fencer:      "#d9b15a", // Shiv-adjacent — gold (placeholder)
+    hero_forge:       "#e05c5c", // McGinnis — red
+    hero_frank:       "#a5784a", // Goo — amber
+    hero_ghost:       "#8fb8c4", // Ivy — teal pale
+    hero_gigawatt:    "#f5a623", // Gigawatt — electric yellow
+    hero_haze:        "#a35fb5", // Haze — violet smoke
+    hero_hornet:      "#e0a84a", // Vindicta — gold hornet
+    hero_kelvin:      "#8fd4e6", // Kelvin — pale cyan ice
+    hero_krill:       "#c4704a", // Krill — rust
+    hero_lash:        "#c44a4a", // Lash — red
+    hero_magician:    "#8f6fc4", // Magician — violet
+    hero_mirage:      "#d9b15a", // Mirage — gold sand
+    hero_nano:        "#7fc48a", // Nano — green
+    hero_necro:       "#6fa3c4", // Seven — electric blue
+    hero_orion:       "#d9a04a", // Sinclair — gold-red
+    hero_priest:      "#e6d8a8", // Priest — ivory
+    hero_punkgoat:    "#c0657a", // Punkgoat — magenta
+    hero_shiv:        "#e05c5c", // Shiv — red
+    hero_synth:       "#f5a623", // Synth — yellow
+    hero_tengu:       "#c65a3f", // Tengu — red
+    hero_unicorn:     "#e8a3d2", // Unicorn — pink
+    hero_vampirebat:  "#8a4a4a", // Vampire — oxblood
+    hero_viper:       "#7fc48a", // Viper — green venom
+    hero_viscous:     "#8fd4a8", // Viscous — slime green
+    hero_warden:      "#6e8cb8", // Warden — steel blue
+    hero_werewolf:    "#a3784a", // Wrecker/Warden — brown
+    hero_wraith:      "#c4a3e8", // Wraith — ethereal purple
+    hero_yamato:      "#c44a4a", // Yamato — crimson
+  };
+  const DEFAULT_ACCENT = "#e8743a";
 
   const CLASS_COLORS = {
     Hero:             "#ff7b72",
@@ -11377,6 +11741,250 @@ module.exports = __WEBPACK_EXTERNAL_MODULE__140__;
     render("");
   }
 
+  // ---- Hero-card data extraction ----------------------------------------------
+
+  // Turn the flat per-hero graph JSON into a structured "kit" object:
+  //   { hero: {name, tags, stats}, slots: [{slotLabel, ability: {...}}] }
+  // Only signature slots (Weapon + Ability 1..4) are included.
+  function extractKitData(graph) {
+    const nodeById = new Map(graph.nodes.map((n) => [n.data.id, n.data]));
+    const outgoing = new Map();
+    graph.edges.forEach((e) => {
+      const s = e.data.source, t = e.data.target, p = e.data.label;
+      if (!outgoing.has(s)) outgoing.set(s, []);
+      outgoing.get(s).push([t, p]);
+    });
+
+    const heroNode = graph.nodes.find((n) => (n.data.classes || "").split(/\s+/).includes("Hero"));
+    if (!heroNode) return null;
+    const heroData = heroNode.data;
+
+    // Per-hero stats bucket (reuse the existing classifier).
+    const stats = { core: [], combat: [] };
+    const tags = [];
+    Object.entries(heroData.properties || {}).forEach(([k, v]) => {
+      if (HIDDEN_PROP_KEYS.has(k)) return;
+      if (k === "heroTag") {
+        const raw = Array.isArray(v) ? v : String(v).split(",");
+        raw.map((s) => s.trim()).filter(Boolean).forEach((t) => tags.push(t));
+        return;
+      }
+      const bucket = classifyPropKey(k);
+      const pretty = Array.isArray(v)
+        ? v.map((vv) => prettifyPropValue(k, vv)).join(", ")
+        : prettifyPropValue(k, v);
+      if (bucket === "Core")   stats.core.push({ key: prettifyPropKey(k), value: pretty });
+      if (bucket === "Combat") stats.combat.push({ key: prettifyPropKey(k), value: pretty });
+    });
+
+    // For each signature slot, walk hero -> hasAbilityInSlot bnode -> ability.
+    const slotBindings = [];
+    (outgoing.get(heroData.id) || []).forEach(([bn, pred]) => {
+      if (pred !== "hasAbilityInSlot") return;
+      const bnOuts = outgoing.get(bn) || [];
+      const slotEdge = bnOuts.find(([, p]) => p === "slot");
+      const abEdge   = bnOuts.find(([, p]) => p === "ability");
+      if (!slotEdge || !abEdge) return;
+      const slotNode = nodeById.get(slotEdge[0]);
+      const abNode   = nodeById.get(abEdge[0]);
+      if (!slotNode || !abNode) return;
+      const slotShort = slotNode.shortId || "";
+      if (!SIGNATURE_SLOT_SHORT_IDS.has(slotShort)) return;
+      slotBindings.push({ slotShort, slotNode, abNode });
+    });
+    slotBindings.sort((a, b) => {
+      return SLOT_SORT_ORDER.indexOf(a.slotShort) - SLOT_SORT_ORDER.indexOf(b.slotShort);
+    });
+
+    const slots = slotBindings.map(({ slotShort, abNode }) => {
+      // Extract ability properties & upgrades
+      const propsOuts = (outgoing.get(abNode.id) || []);
+      const properties = [];
+      const upgrades = [];
+      propsOuts.forEach(([t, p]) => {
+        const target = nodeById.get(t);
+        if (!target) return;
+        if (p === "hasProperty") properties.push(target);
+        if (p === "hasUpgrade")  upgrades.push(target);
+      });
+
+      // Pick 3-4 player-relevant stats from the property blank nodes.
+      // Known interesting keys (by prettified label) in order of preference:
+      const STAT_PRIORITY = [
+        "Cooldown", "Damage", "DPS", "Duration", "Cast Range", "Radius",
+        "Charges", "Stun Duration", "Slow Percent", "Slow Duration",
+        "Burn Damage", "Burn Duration",
+      ];
+      const statDisplay = [];
+      STAT_PRIORITY.forEach((label) => {
+        const match = properties.find((p) => p.label === label);
+        if (match && statDisplay.length < 4) {
+          const props = match.properties || {};
+          const baseValue = props.baseValue != null
+            ? prettifyPropValue("baseValue", props.baseValue) : null;
+          const scaleFn = props.scaleFunction
+            ? prettifyPropValue("scaleFunction", props.scaleFunction) : null;
+          statDisplay.push({
+            label: match.label,
+            value: baseValue,
+            scalesWith: scaleFn && scaleFn !== "Single Stat" ? scaleFn : null,
+          });
+        }
+      });
+
+      // Group upgrades by tier level — some abilities stack multiple bonuses
+      // at the same tier (e.g. Flame Dash T2: +20 DPS + 1 Ground Flame Duration).
+      // We render one stamp per tier and join effects with a "+".
+      const tierBuckets = new Map();
+      upgrades.forEach((u) => {
+        const lvl = String(u.properties?.upgradeLevel || "?");
+        if (!tierBuckets.has(lvl)) tierBuckets.set(lvl, []);
+        tierBuckets.get(lvl).push(u);
+      });
+      const upgradeStamps = [...tierBuckets.entries()]
+        .sort(([a], [b]) => parseInt(a, 10) - parseInt(b, 10))
+        .slice(0, 3)
+        .map(([level, ups]) => {
+          // Primary value = the first upgrade's bonus. If there are siblings,
+          // append a "+N more" hint on the property line.
+          const primary = ups[0];
+          const bonus = primary.properties?.bonusValue || "";
+          let prop = primary.label || "";
+          if (primary.properties?.modifiesProperty) {
+            prop = prettifyPropValue("modifiesProperty", primary.properties.modifiesProperty);
+          }
+          if (ups.length > 1) prop += ` +${ups.length - 1} more`;
+          return { level, value: bonus, prop };
+        });
+
+      return {
+        slotLabel: SLOT_DISPLAY_NAMES[slotShort] || slotShort,
+        slotShort,
+        ability: {
+          name: abNode.label,
+          stats: statDisplay,
+          upgrades: upgradeStamps,
+        },
+      };
+    });
+
+    return {
+      hero: {
+        name: heroData.label,
+        tags,
+        stats,
+      },
+      slots,
+    };
+  }
+
+  function renderHeroCard() {
+    const kit = extractKitData(state.graph);
+    if (!kit) return;
+
+    // Hero name + tags
+    document.getElementById("hc-hero-name").textContent = kit.hero.name;
+    const tagsEl = document.getElementById("hc-hero-tags");
+    tagsEl.innerHTML = "";
+    kit.hero.tags.forEach((t) => {
+      const span = document.createElement("span");
+      span.textContent = t;
+      tagsEl.appendChild(span);
+    });
+
+    // Apply per-hero accent colour to CSS variables
+    const accent = HERO_ACCENT[state.currentHero] || DEFAULT_ACCENT;
+    const soft = accent + "33";  // 20% alpha
+    document.documentElement.style.setProperty("--hero-accent", accent);
+    document.documentElement.style.setProperty("--hero-accent-soft", soft);
+
+    // Ability cards
+    const grid = document.getElementById("hc-ability-grid");
+    grid.innerHTML = "";
+    kit.slots.forEach(({ slotLabel, slotShort, ability }) => {
+      const card = document.createElement("div");
+      card.className = "ability-card" + (slotShort === "slot/WeaponPrimary" ? " weapon-card" : "");
+
+      const slotEl = document.createElement("div");
+      slotEl.className = "ability-slot";
+      slotEl.textContent = slotLabel;
+      card.appendChild(slotEl);
+
+      const nameEl = document.createElement("h3");
+      nameEl.className = "ability-name";
+      nameEl.textContent = ability.name;
+      card.appendChild(nameEl);
+
+      if (ability.stats.length) {
+        const dl = document.createElement("dl");
+        dl.className = "ability-stats";
+        ability.stats.forEach((s) => {
+          const dt = document.createElement("dt");
+          dt.textContent = s.label;
+          const dd = document.createElement("dd");
+          dd.textContent = s.value != null ? s.value : "\u2014";
+          if (s.scalesWith) {
+            const sw = document.createElement("span");
+            sw.className = "scales-with";
+            sw.textContent = "scales " + s.scalesWith;
+            dd.appendChild(sw);
+          }
+          dl.append(dt, dd);
+        });
+        card.appendChild(dl);
+      }
+
+      if (ability.upgrades.length) {
+        const upg = document.createElement("div");
+        upg.className = "ability-upgrades";
+        ability.upgrades.forEach((u) => {
+          const stamp = document.createElement("div");
+          stamp.className = "tier-stamp";
+          const lbl = document.createElement("span");
+          lbl.className = "tier-label";
+          lbl.textContent = "T" + (u.level || "?");
+          const val = document.createElement("span");
+          val.className = "tier-value";
+          val.textContent = u.value ? (u.value.startsWith("-") || u.value.startsWith("+")
+                            ? u.value : "+" + u.value) : "";
+          const prop = document.createElement("span");
+          prop.className = "tier-prop";
+          prop.textContent = u.prop;
+          stamp.append(lbl, val, prop);
+          upg.appendChild(stamp);
+        });
+        card.appendChild(upg);
+      }
+      grid.appendChild(card);
+    });
+
+    // Stats spine
+    const fillSpine = (elId, entries) => {
+      const el = document.getElementById(elId);
+      el.innerHTML = "";
+      entries.forEach((s) => {
+        const dt = document.createElement("dt"); dt.textContent = s.key;
+        const dd = document.createElement("dd"); dd.textContent = s.value;
+        el.append(dt, dd);
+      });
+    };
+    fillSpine("hc-stats-core",   kit.hero.stats.core);
+    fillSpine("hc-stats-combat", kit.hero.stats.combat);
+  }
+
+  function setViewMode(mode) {
+    document.body.classList.toggle("view-graph", mode === "graph");
+    document.body.classList.toggle("view-card",  mode === "card");
+    document.getElementById("btn-view-card").classList.toggle("active",  mode === "card");
+    document.getElementById("btn-view-graph").classList.toggle("active", mode === "graph");
+    state.viewMode = mode;
+    // When entering graph mode, give cy a fresh resize/fit since it was in a
+    // hidden container while the user was on the card view.
+    if (mode === "graph" && state.cy) {
+      setTimeout(() => { state.cy.resize(); state.cy.fit(null, 40); }, 50);
+    }
+  }
+
   // ---- Hero picker + switching ------------------------------------------------
 
   function buildHeroPicker() {
@@ -11419,6 +12027,11 @@ module.exports = __WEBPACK_EXTERNAL_MODULE__140__;
     if (state.kitMode) state.kitSet.forEach((id) => state.expanded.add(id));
     applyKitMode();
     applyExpansion();
+
+    // Render the hero card (new default view). Picks up hero accent + kit data.
+    renderHeroCard();
+    // Update page title to reflect current hero.
+    document.title = `Nydus \u2014 ${state.graph.public_name}`;
 
     document.getElementById("meta-summary").innerHTML =
       `${state.graph.public_name} &middot; ${state.graph.meta.node_count} nodes &middot; ${state.graph.meta.edge_count} edges`;
@@ -11539,6 +12152,10 @@ module.exports = __WEBPACK_EXTERNAL_MODULE__140__;
         const on = document.body.classList.contains("dev-mode");
         document.getElementById("btn-dev-mode").classList.toggle("active", on);
       });
+      document.getElementById("btn-view-card").addEventListener("click",  () => setViewMode("card"));
+      document.getElementById("btn-view-graph").addEventListener("click", () => setViewMode("graph"));
+      // Default view on first load
+      setViewMode("card");
       document.getElementById("btn-share").addEventListener("click", () => {
         const url = window.location.href;
         navigator.clipboard.writeText(url).then(() => toast("Link copied")).catch(() => toast(url));

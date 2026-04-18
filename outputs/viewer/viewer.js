@@ -47,6 +47,58 @@
     "slot/Signature3",
     "slot/Signature4",
   ];
+  const SLOT_DISPLAY_NAMES = {
+    "slot/WeaponPrimary": "Primary Weapon",
+    "slot/Signature1":    "Ability 1",
+    "slot/Signature2":    "Ability 2",
+    "slot/Signature3":    "Ability 3",
+    "slot/Signature4":    "Ultimate",
+  };
+
+  // Per-hero accent colour — pulled from each hero's in-game identity so the
+  // hero card wears their vibe. Fallback (below) is sodium-lamp amber.
+  // Codename keys match state.bundle.heroes[...].codename.
+  const HERO_ACCENT = {
+    hero_inferno:     "#e8743a", // Infernus — fire orange
+    hero_atlas:       "#c65a3f", // Abrams — rust red
+    hero_astro:       "#d9b15a", // Calico — gold
+    hero_bebop:       "#b88647", // Bebop — brass
+    hero_bookworm:    "#6e8cb8", // Mo & Krill-adj — steel blue
+    hero_chrono:      "#8f6fc4", // Paradox — violet
+    hero_doorman:     "#8a9bb0", // Doorman — slate
+    hero_drifter:     "#5a6f8f", // Drifter — cold grey
+    hero_dynamo:      "#7fb8d6", // Dynamo — electric cyan
+    hero_familiar:    "#9b6dff", // Pocket — purple
+    hero_fencer:      "#d9b15a", // Shiv-adjacent — gold (placeholder)
+    hero_forge:       "#e05c5c", // McGinnis — red
+    hero_frank:       "#a5784a", // Goo — amber
+    hero_ghost:       "#8fb8c4", // Ivy — teal pale
+    hero_gigawatt:    "#f5a623", // Gigawatt — electric yellow
+    hero_haze:        "#a35fb5", // Haze — violet smoke
+    hero_hornet:      "#e0a84a", // Vindicta — gold hornet
+    hero_kelvin:      "#8fd4e6", // Kelvin — pale cyan ice
+    hero_krill:       "#c4704a", // Krill — rust
+    hero_lash:        "#c44a4a", // Lash — red
+    hero_magician:    "#8f6fc4", // Magician — violet
+    hero_mirage:      "#d9b15a", // Mirage — gold sand
+    hero_nano:        "#7fc48a", // Nano — green
+    hero_necro:       "#6fa3c4", // Seven — electric blue
+    hero_orion:       "#d9a04a", // Sinclair — gold-red
+    hero_priest:      "#e6d8a8", // Priest — ivory
+    hero_punkgoat:    "#c0657a", // Punkgoat — magenta
+    hero_shiv:        "#e05c5c", // Shiv — red
+    hero_synth:       "#f5a623", // Synth — yellow
+    hero_tengu:       "#c65a3f", // Tengu — red
+    hero_unicorn:     "#e8a3d2", // Unicorn — pink
+    hero_vampirebat:  "#8a4a4a", // Vampire — oxblood
+    hero_viper:       "#7fc48a", // Viper — green venom
+    hero_viscous:     "#8fd4a8", // Viscous — slime green
+    hero_warden:      "#6e8cb8", // Warden — steel blue
+    hero_werewolf:    "#a3784a", // Wrecker/Warden — brown
+    hero_wraith:      "#c4a3e8", // Wraith — ethereal purple
+    hero_yamato:      "#c44a4a", // Yamato — crimson
+  };
+  const DEFAULT_ACCENT = "#e8743a";
 
   const CLASS_COLORS = {
     Hero:             "#ff7b72",
@@ -803,6 +855,250 @@
     render("");
   }
 
+  // ---- Hero-card data extraction ----------------------------------------------
+
+  // Turn the flat per-hero graph JSON into a structured "kit" object:
+  //   { hero: {name, tags, stats}, slots: [{slotLabel, ability: {...}}] }
+  // Only signature slots (Weapon + Ability 1..4) are included.
+  function extractKitData(graph) {
+    const nodeById = new Map(graph.nodes.map((n) => [n.data.id, n.data]));
+    const outgoing = new Map();
+    graph.edges.forEach((e) => {
+      const s = e.data.source, t = e.data.target, p = e.data.label;
+      if (!outgoing.has(s)) outgoing.set(s, []);
+      outgoing.get(s).push([t, p]);
+    });
+
+    const heroNode = graph.nodes.find((n) => (n.data.classes || "").split(/\s+/).includes("Hero"));
+    if (!heroNode) return null;
+    const heroData = heroNode.data;
+
+    // Per-hero stats bucket (reuse the existing classifier).
+    const stats = { core: [], combat: [] };
+    const tags = [];
+    Object.entries(heroData.properties || {}).forEach(([k, v]) => {
+      if (HIDDEN_PROP_KEYS.has(k)) return;
+      if (k === "heroTag") {
+        const raw = Array.isArray(v) ? v : String(v).split(",");
+        raw.map((s) => s.trim()).filter(Boolean).forEach((t) => tags.push(t));
+        return;
+      }
+      const bucket = classifyPropKey(k);
+      const pretty = Array.isArray(v)
+        ? v.map((vv) => prettifyPropValue(k, vv)).join(", ")
+        : prettifyPropValue(k, v);
+      if (bucket === "Core")   stats.core.push({ key: prettifyPropKey(k), value: pretty });
+      if (bucket === "Combat") stats.combat.push({ key: prettifyPropKey(k), value: pretty });
+    });
+
+    // For each signature slot, walk hero -> hasAbilityInSlot bnode -> ability.
+    const slotBindings = [];
+    (outgoing.get(heroData.id) || []).forEach(([bn, pred]) => {
+      if (pred !== "hasAbilityInSlot") return;
+      const bnOuts = outgoing.get(bn) || [];
+      const slotEdge = bnOuts.find(([, p]) => p === "slot");
+      const abEdge   = bnOuts.find(([, p]) => p === "ability");
+      if (!slotEdge || !abEdge) return;
+      const slotNode = nodeById.get(slotEdge[0]);
+      const abNode   = nodeById.get(abEdge[0]);
+      if (!slotNode || !abNode) return;
+      const slotShort = slotNode.shortId || "";
+      if (!SIGNATURE_SLOT_SHORT_IDS.has(slotShort)) return;
+      slotBindings.push({ slotShort, slotNode, abNode });
+    });
+    slotBindings.sort((a, b) => {
+      return SLOT_SORT_ORDER.indexOf(a.slotShort) - SLOT_SORT_ORDER.indexOf(b.slotShort);
+    });
+
+    const slots = slotBindings.map(({ slotShort, abNode }) => {
+      // Extract ability properties & upgrades
+      const propsOuts = (outgoing.get(abNode.id) || []);
+      const properties = [];
+      const upgrades = [];
+      propsOuts.forEach(([t, p]) => {
+        const target = nodeById.get(t);
+        if (!target) return;
+        if (p === "hasProperty") properties.push(target);
+        if (p === "hasUpgrade")  upgrades.push(target);
+      });
+
+      // Pick 3-4 player-relevant stats from the property blank nodes.
+      // Known interesting keys (by prettified label) in order of preference:
+      const STAT_PRIORITY = [
+        "Cooldown", "Damage", "DPS", "Duration", "Cast Range", "Radius",
+        "Charges", "Stun Duration", "Slow Percent", "Slow Duration",
+        "Burn Damage", "Burn Duration",
+      ];
+      const statDisplay = [];
+      STAT_PRIORITY.forEach((label) => {
+        const match = properties.find((p) => p.label === label);
+        if (match && statDisplay.length < 4) {
+          const props = match.properties || {};
+          const baseValue = props.baseValue != null
+            ? prettifyPropValue("baseValue", props.baseValue) : null;
+          const scaleFn = props.scaleFunction
+            ? prettifyPropValue("scaleFunction", props.scaleFunction) : null;
+          statDisplay.push({
+            label: match.label,
+            value: baseValue,
+            scalesWith: scaleFn && scaleFn !== "Single Stat" ? scaleFn : null,
+          });
+        }
+      });
+
+      // Group upgrades by tier level — some abilities stack multiple bonuses
+      // at the same tier (e.g. Flame Dash T2: +20 DPS + 1 Ground Flame Duration).
+      // We render one stamp per tier and join effects with a "+".
+      const tierBuckets = new Map();
+      upgrades.forEach((u) => {
+        const lvl = String(u.properties?.upgradeLevel || "?");
+        if (!tierBuckets.has(lvl)) tierBuckets.set(lvl, []);
+        tierBuckets.get(lvl).push(u);
+      });
+      const upgradeStamps = [...tierBuckets.entries()]
+        .sort(([a], [b]) => parseInt(a, 10) - parseInt(b, 10))
+        .slice(0, 3)
+        .map(([level, ups]) => {
+          // Primary value = the first upgrade's bonus. If there are siblings,
+          // append a "+N more" hint on the property line.
+          const primary = ups[0];
+          const bonus = primary.properties?.bonusValue || "";
+          let prop = primary.label || "";
+          if (primary.properties?.modifiesProperty) {
+            prop = prettifyPropValue("modifiesProperty", primary.properties.modifiesProperty);
+          }
+          if (ups.length > 1) prop += ` +${ups.length - 1} more`;
+          return { level, value: bonus, prop };
+        });
+
+      return {
+        slotLabel: SLOT_DISPLAY_NAMES[slotShort] || slotShort,
+        slotShort,
+        ability: {
+          name: abNode.label,
+          stats: statDisplay,
+          upgrades: upgradeStamps,
+        },
+      };
+    });
+
+    return {
+      hero: {
+        name: heroData.label,
+        tags,
+        stats,
+      },
+      slots,
+    };
+  }
+
+  function renderHeroCard() {
+    const kit = extractKitData(state.graph);
+    if (!kit) return;
+
+    // Hero name + tags
+    document.getElementById("hc-hero-name").textContent = kit.hero.name;
+    const tagsEl = document.getElementById("hc-hero-tags");
+    tagsEl.innerHTML = "";
+    kit.hero.tags.forEach((t) => {
+      const span = document.createElement("span");
+      span.textContent = t;
+      tagsEl.appendChild(span);
+    });
+
+    // Apply per-hero accent colour to CSS variables
+    const accent = HERO_ACCENT[state.currentHero] || DEFAULT_ACCENT;
+    const soft = accent + "33";  // 20% alpha
+    document.documentElement.style.setProperty("--hero-accent", accent);
+    document.documentElement.style.setProperty("--hero-accent-soft", soft);
+
+    // Ability cards
+    const grid = document.getElementById("hc-ability-grid");
+    grid.innerHTML = "";
+    kit.slots.forEach(({ slotLabel, slotShort, ability }) => {
+      const card = document.createElement("div");
+      card.className = "ability-card" + (slotShort === "slot/WeaponPrimary" ? " weapon-card" : "");
+
+      const slotEl = document.createElement("div");
+      slotEl.className = "ability-slot";
+      slotEl.textContent = slotLabel;
+      card.appendChild(slotEl);
+
+      const nameEl = document.createElement("h3");
+      nameEl.className = "ability-name";
+      nameEl.textContent = ability.name;
+      card.appendChild(nameEl);
+
+      if (ability.stats.length) {
+        const dl = document.createElement("dl");
+        dl.className = "ability-stats";
+        ability.stats.forEach((s) => {
+          const dt = document.createElement("dt");
+          dt.textContent = s.label;
+          const dd = document.createElement("dd");
+          dd.textContent = s.value != null ? s.value : "\u2014";
+          if (s.scalesWith) {
+            const sw = document.createElement("span");
+            sw.className = "scales-with";
+            sw.textContent = "scales " + s.scalesWith;
+            dd.appendChild(sw);
+          }
+          dl.append(dt, dd);
+        });
+        card.appendChild(dl);
+      }
+
+      if (ability.upgrades.length) {
+        const upg = document.createElement("div");
+        upg.className = "ability-upgrades";
+        ability.upgrades.forEach((u) => {
+          const stamp = document.createElement("div");
+          stamp.className = "tier-stamp";
+          const lbl = document.createElement("span");
+          lbl.className = "tier-label";
+          lbl.textContent = "T" + (u.level || "?");
+          const val = document.createElement("span");
+          val.className = "tier-value";
+          val.textContent = u.value ? (u.value.startsWith("-") || u.value.startsWith("+")
+                            ? u.value : "+" + u.value) : "";
+          const prop = document.createElement("span");
+          prop.className = "tier-prop";
+          prop.textContent = u.prop;
+          stamp.append(lbl, val, prop);
+          upg.appendChild(stamp);
+        });
+        card.appendChild(upg);
+      }
+      grid.appendChild(card);
+    });
+
+    // Stats spine
+    const fillSpine = (elId, entries) => {
+      const el = document.getElementById(elId);
+      el.innerHTML = "";
+      entries.forEach((s) => {
+        const dt = document.createElement("dt"); dt.textContent = s.key;
+        const dd = document.createElement("dd"); dd.textContent = s.value;
+        el.append(dt, dd);
+      });
+    };
+    fillSpine("hc-stats-core",   kit.hero.stats.core);
+    fillSpine("hc-stats-combat", kit.hero.stats.combat);
+  }
+
+  function setViewMode(mode) {
+    document.body.classList.toggle("view-graph", mode === "graph");
+    document.body.classList.toggle("view-card",  mode === "card");
+    document.getElementById("btn-view-card").classList.toggle("active",  mode === "card");
+    document.getElementById("btn-view-graph").classList.toggle("active", mode === "graph");
+    state.viewMode = mode;
+    // When entering graph mode, give cy a fresh resize/fit since it was in a
+    // hidden container while the user was on the card view.
+    if (mode === "graph" && state.cy) {
+      setTimeout(() => { state.cy.resize(); state.cy.fit(null, 40); }, 50);
+    }
+  }
+
   // ---- Hero picker + switching ------------------------------------------------
 
   function buildHeroPicker() {
@@ -845,6 +1141,11 @@
     if (state.kitMode) state.kitSet.forEach((id) => state.expanded.add(id));
     applyKitMode();
     applyExpansion();
+
+    // Render the hero card (new default view). Picks up hero accent + kit data.
+    renderHeroCard();
+    // Update page title to reflect current hero.
+    document.title = `Nydus \u2014 ${state.graph.public_name}`;
 
     document.getElementById("meta-summary").innerHTML =
       `${state.graph.public_name} &middot; ${state.graph.meta.node_count} nodes &middot; ${state.graph.meta.edge_count} edges`;
@@ -965,6 +1266,10 @@
         const on = document.body.classList.contains("dev-mode");
         document.getElementById("btn-dev-mode").classList.toggle("active", on);
       });
+      document.getElementById("btn-view-card").addEventListener("click",  () => setViewMode("card"));
+      document.getElementById("btn-view-graph").addEventListener("click", () => setViewMode("graph"));
+      // Default view on first load
+      setViewMode("card");
       document.getElementById("btn-share").addEventListener("click", () => {
         const url = window.location.href;
         navigator.clipboard.writeText(url).then(() => toast("Link copied")).catch(() => toast(url));

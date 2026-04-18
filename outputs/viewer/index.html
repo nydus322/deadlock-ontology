@@ -22,23 +22,49 @@
   <header>
     <div class="title">
       <span class="nydus-mark">Nydus</span>
-      <span class="subtitle">Deadlock ontology &middot; <span id="meta-summary">loading&hellip;</span></span>
+      <span class="subtitle">the Deadlock knowledge graph <span class="meta-summary-dev dev-only">&middot; <span id="meta-summary">loading&hellip;</span></span></span>
     </div>
     <div class="actions">
       <label class="hero-picker-label" for="hero-picker">Hero</label>
       <select id="hero-picker" class="hero-picker"></select>
       <button id="btn-share" title="Copy shareable link">Share</button>
-      <button id="btn-kit-mode" title="Toggle between signature-kit view and every-node view">Show all nodes</button>
-      <button id="btn-reset">Reset</button>
-      <button id="btn-expand-all">Expand all</button>
-      <button id="btn-collapse-all">Collapse</button>
-      <button id="btn-dev-mode" title="Show RDF class filters, edge-predicate chips, and ontology IRIs">Dev</button>
+      <div class="view-toggle" role="tablist" aria-label="View mode">
+        <button id="btn-view-card" class="view-toggle-btn active" data-view="card">Card</button>
+        <button id="btn-view-graph" class="view-toggle-btn" data-view="graph">Graph</button>
+      </div>
+      <button id="btn-kit-mode" class="graph-only dev-only" title="Toggle signature-kit vs every-node view">Show all nodes</button>
+      <button id="btn-reset" class="graph-only dev-only">Reset</button>
+      <button id="btn-expand-all" class="graph-only dev-only">Expand all</button>
+      <button id="btn-collapse-all" class="graph-only dev-only">Collapse</button>
+      <button id="btn-dev-mode" title="Reveal RDF internals: class filters, edge-predicate chips, ontology IRIs">Dev</button>
     </div>
   </header>
 
 
   <main>
-    <aside id="sidebar-left">
+    <!-- Hero card view (default). Populated from the same per-hero graph data
+         as the force-graph, but rendered as a legible kit layout. -->
+    <section id="hero-card" class="hero-card">
+      <header class="hero-card-header">
+        <h1 id="hc-hero-name"></h1>
+        <p id="hc-hero-tags" class="hero-card-tags"></p>
+      </header>
+      <div class="hero-card-body">
+        <div id="hc-ability-grid" class="ability-grid"></div>
+        <aside id="hc-stats-spine" class="stats-spine">
+          <section>
+            <h4>Core</h4>
+            <dl id="hc-stats-core"></dl>
+          </section>
+          <section>
+            <h4>Combat</h4>
+            <dl id="hc-stats-combat"></dl>
+          </section>
+        </aside>
+      </div>
+    </section>
+
+    <aside id="sidebar-left" class="graph-only">
       <h3 class="dev-only">Filters</h3>
       <p class="hint dev-only">Toggle node classes on/off. Class legend doubles as filter.</p>
       <div id="class-filters" class="dev-only"></div>
@@ -49,9 +75,9 @@
       <ul id="node-list"></ul>
     </aside>
 
-    <div id="graph"></div>
+    <div id="graph" class="graph-only"></div>
 
-    <aside id="sidebar-right">
+    <aside id="sidebar-right" class="graph-only">
       <div id="inspector-empty">
         <h3>Inspector</h3>
         <p class="hint">Click a node to see its triples, incoming and outgoing edges, and provenance.</p>
