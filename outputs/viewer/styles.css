@@ -655,6 +655,19 @@ body.view-card main {
   word-break: break-word;
 }
 
+/* Aberrant-movement cards: hero-overridden Jump / Slide / Mantle / etc.
+   Visually muted so they read as secondary to the signature kit. */
+.ability-card.aberrant-card {
+  border-top-color: var(--fg-soft);
+  opacity: 0.88;
+}
+.ability-card.aberrant-card .ability-slot {
+  color: var(--fg-muted);
+}
+.ability-card.aberrant-card .tier-stamp .tier-label {
+  color: var(--fg-muted);
+}
+
 /* Primary-weapon card spans full row for visual differentiation */
 .ability-card.weapon-card {
   grid-column: 1 / -1;

@@ -267,6 +267,21 @@
     });
     const nodeById = new Map(graph.nodes.map((n) => [n.data.id, n.data]));
 
+    // An ability is "aberrant" (worth showing outside kit) when it carries
+    // hero-specific properties or upgrades in this hero's TTL. Vanilla Jump /
+    // Slide / Mantle / Climb Rope / Hyperline / Melee are shared engine
+    // defaults and contribute nothing new — suppress them universally.
+    const aberrantAbilities = new Set();
+    graph.nodes.forEach((n) => {
+      const classes = (n.data.classes || "").split(/\s+/);
+      if (!classes.includes("Ability")) return;
+      const preds = (outgoing.get(n.data.id) || []).map(([, p]) => p);
+      if (preds.includes("hasProperty") || preds.includes("hasUpgrade")) {
+        aberrantAbilities.add(n.data.id);
+      }
+    });
+    state.aberrantAbilities = aberrantAbilities;
+
     const kit = new Set([heroId]);
     const sigAbilities = [];
 
@@ -277,7 +292,15 @@
       if (!slotEdge) return;
       const slotNode = nodeById.get(slotEdge[0]);
       const slotShort = slotNode?.shortId || "";
-      if (!SIGNATURE_SLOT_SHORT_IDS.has(slotShort)) return;
+
+      const abEdge = bnodeOuts.find(([, pp]) => pp === "ability");
+      const abId = abEdge ? abEdge[0] : null;
+      const isSig = SIGNATURE_SLOT_SHORT_IDS.has(slotShort);
+      const isAberrantMovement = abId && aberrantAbilities.has(abId);
+
+      // Include if it's a signature slot OR an aberrant movement ability.
+      if (!isSig && !isAberrantMovement) return;
+
       kit.add(bnodeId);
       bnodeOuts.forEach(([t, pp]) => {
         kit.add(t);
@@ -285,8 +308,7 @@
       });
     });
 
-    // For each signature ability, include its properties, upgrades, and their 1-hop
-    // (scale functions -> stats, property categories, modifier values).
+    // For each surviving ability, include its properties, upgrades, and their 1-hop.
     sigAbilities.forEach((aid) => {
       (outgoing.get(aid) || []).forEach(([t]) => {
         kit.add(t);
@@ -329,7 +351,7 @@
     let key = k.replace(/^starting/, "");
     if (key.length === 0) key = k;
     const spaced = key.replace(/([a-z0-9])([A-Z])/g, "$1 $2");
-    return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+    return spiritize(spaced.charAt(0).toUpperCase() + spaced.slice(1));
   }
   function prettifyPropValue(k, v) {
     if (typeof v === "number") {
@@ -365,11 +387,13 @@
               .join(" ");
     }
     if (k === "modifiesProperty") {
-      if (MODIFIES_PROPERTY_ALIAS[v]) return MODIFIES_PROPERTY_ALIAS[v];
+      if (MODIFIES_PROPERTY_ALIAS[v]) return spiritize(MODIFIES_PROPERTY_ALIAS[v]);
       // Preserve bare acronyms (DPS, HP); CamelCase split otherwise.
       if (/^[A-Z0-9]+$/.test(v) && v.length <= 5) return v;
-      return v.replace(/([a-z0-9])([A-Z])/g, "$1 $2")
-              .replace(/^./, (c) => c.toUpperCase());
+      return spiritize(
+        v.replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+         .replace(/^./, (c) => c.toUpperCase())
+      );
     }
     return v;
   }
@@ -405,6 +429,47 @@
     DPS:                          "DPS",
     HP:                           "Health",
   };
+
+  // Valve's engine says "Tech" — Deadlock's players say "Spirit". Also
+  // "Buff" / "Debuff" are engine words Deadlock tooltips avoid (in-game
+  // tooltips just say what the effect is). Normalise at the display layer.
+  function spiritize(s) {
+    if (!s || typeof s !== "string") return s;
+    return s
+      // Tech -> Spirit (word-bounded so it doesn't chop compound words)
+      .replace(/\bTech\b/g, "Spirit")
+      .replace(/\bTech([A-Z])/g, "Spirit$1")
+      .replace(/\btech_/g, "spirit_");
+  }
+
+  // Strip the parent name's tokens out of a child label. Avoids saying
+  // "Slash Length" on the "Power Slash" card, "Burn Duration" on the
+  // "Afterburn" card, etc. Only strips tokens of 3+ characters so we don't
+  // accidentally chop letters out of multi-meaning prefixes.
+  function stripParentName(childLabel, parentName) {
+    if (!childLabel || !parentName) return childLabel || "";
+    const tokens = parentName.split(/\s+/).filter((t) => t.length >= 3);
+    let out = String(childLabel);
+    tokens.forEach((t) => {
+      // Strip the token whether it's a full word OR the stem of a compound
+      // (Afterburn -> "AFTERBURN" case; "Burn" substring of "Afterburn" when
+      // parent is one word — handled by trying both boundaries).
+      const safe = t.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+      out = out.replace(new RegExp(`\\b${safe}\\b`, "gi"), "");
+    });
+    // For compound parent names ("Afterburn", "Concussive Combustion"),
+    // also try stripping sub-stems of 5+ chars so "Burn Duration" reduces
+    // under an "Afterburn" parent.
+    parentName.match(/[A-Z][a-z]+/g)?.forEach((piece) => {
+      if (piece.length >= 5) {
+        const safe = piece.replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+        out = out.replace(new RegExp(`\\b${safe}\\b`, "gi"), "");
+      }
+    });
+    out = out.replace(/\s+/g, " ").trim();
+    // Never return empty — if stripping leaves nothing, keep the original.
+    return out || String(childLabel);
+  }
 
   // Suffix applied to a bare numeric value to make it read as a real quantity.
   // Deadlock's UI convention: seconds for times, meters for distances, % for
@@ -875,6 +940,17 @@
     };
 
     const entries = state.graph.nodes
+      .filter((n) => {
+        // Suppress vanilla movement abilities (Jump, Slide, Mantle, Climb
+        // Rope, Hyperline, Melee, Dash, etc.) when they carry no hero-
+        // specific properties or upgrades. These are engine defaults shared
+        // across all heroes; listing them in Jump-to is pure noise.
+        const classes = (n.data.classes || "").split(/\s+/);
+        if (classes.includes("Ability") && state.aberrantAbilities && !state.aberrantAbilities.has(n.data.id)) {
+          return false;
+        }
+        return true;
+      })
       .map((n) => {
         const cls = primaryClass(n.data.classes);
         let label = n.data.label;
@@ -951,7 +1027,10 @@
       if (bucket === "Combat") stats.combat.push({ key: prettifyPropKey(k), value: pretty });
     });
 
-    // For each signature slot, walk hero -> hasAbilityInSlot bnode -> ability.
+    // For each slot, walk hero -> hasAbilityInSlot bnode -> ability. Keep
+    // signature slots always; keep utility slots (Jump / Slide / Mantle /
+    // Hyperline / Melee / Innate / etc.) only when they carry hero-specific
+    // hasProperty or hasUpgrade — i.e. aberrant behaviour worth showing.
     const slotBindings = [];
     (outgoing.get(heroData.id) || []).forEach(([bn, pred]) => {
       if (pred !== "hasAbilityInSlot") return;
@@ -963,14 +1042,25 @@
       const abNode   = nodeById.get(abEdge[0]);
       if (!slotNode || !abNode) return;
       const slotShort = slotNode.shortId || "";
-      if (!SIGNATURE_SLOT_SHORT_IDS.has(slotShort)) return;
-      slotBindings.push({ slotShort, slotNode, abNode });
+      const isSig = SIGNATURE_SLOT_SHORT_IDS.has(slotShort);
+      // An ability is aberrant if it carries its own properties/upgrades in
+      // this hero's TTL — meaning the engine default was overridden.
+      const abPreds = (outgoing.get(abNode.id) || []).map(([, p]) => p);
+      const isAberrant = abPreds.includes("hasProperty") || abPreds.includes("hasUpgrade");
+      if (!isSig && !isAberrant) return;
+      slotBindings.push({ slotShort, slotNode, abNode, isAberrant: isAberrant && !isSig });
     });
     slotBindings.sort((a, b) => {
-      return SLOT_SORT_ORDER.indexOf(a.slotShort) - SLOT_SORT_ORDER.indexOf(b.slotShort);
+      const ai = SLOT_SORT_ORDER.indexOf(a.slotShort);
+      const bi = SLOT_SORT_ORDER.indexOf(b.slotShort);
+      // Signature first (in slot order), then aberrant utility (stable).
+      const ax = ai === -1 ? 99 : ai;
+      const bx = bi === -1 ? 99 : bi;
+      if (ax !== bx) return ax - bx;
+      return a.slotShort.localeCompare(b.slotShort);
     });
 
-    const slots = slotBindings.map(({ slotShort, abNode }) => {
+    const slots = slotBindings.map(({ slotShort, abNode, isAberrant }) => {
       // Extract ability properties & upgrades
       const propsOuts = (outgoing.get(abNode.id) || []);
       const properties = [];
@@ -1004,7 +1094,10 @@
           const scaleFn = props.scaleFunction
             ? prettifyPropValue("scaleFunction", props.scaleFunction) : null;
           statDisplay.push({
-            label: match.label,
+            // Strip the ability name from the property label so a Power Slash
+            // card shows "Length" not "Slash Length", Afterburn shows
+            // "Duration" not "Burn Duration", etc.
+            label: spiritize(stripParentName(match.label, abNode.label)),
             value: baseValue,
             scalesWith: scaleFn || null,
           });
@@ -1026,12 +1119,14 @@
       function formatUpgradeEffect(u) {
         const raw = u.properties?.bonusValue || "";
         const modProp = u.properties?.modifiesProperty || "";
-        const propLabel = modProp
+        let propLabel = modProp
           ? prettifyPropValue("modifiesProperty", modProp)
           : (u.label || "");
+        // Strip the ability name from the effect line so a Power Slash
+        // T3 reads "+8m Length" not "+8m Slash Length".
+        propLabel = spiritize(stripParentName(propLabel, abNode.label));
         const unitHint = modProp || propLabel;
         let bonus = String(raw);
-        // Prepend + for positive values when no sign is present.
         if (bonus && !/^[+-]/.test(bonus) && !/^0$/.test(bonus)) bonus = "+" + bonus;
         return { bonus: withUnit(bonus, unitHint), prop: propLabel };
       }
@@ -1043,11 +1138,29 @@
           return { level, effects };
         });
 
+      // Strip the hero name from the ability name so "Yamato Set" becomes
+      // "Set" (or — for the weapon card — just drop the name entirely since
+      // the slot label already reads "Primary Weapon"). Also handles
+      // ability-name patterns like "MeleeInferno" -> "Melee".
+      let displayAbilityName = spiritize(stripParentName(abNode.label, heroData.label));
+      if (slotShort === "slot/WeaponPrimary" && /^set$/i.test(displayAbilityName)) {
+        displayAbilityName = "";  // slot label carries the meaning
+      }
+
+      // For utility slots not in SLOT_DISPLAY_NAMES, fall back to prettifying
+      // the slot shortId: "slot/AbilityJump" -> "Jump".
+      let slotLabel = SLOT_DISPLAY_NAMES[slotShort];
+      if (!slotLabel) {
+        slotLabel = slotShort.replace(/^slot\//, "").replace(/^Ability/, "")
+          .replace(/([a-z0-9])([A-Z])/g, "$1 $2");
+      }
+
       return {
-        slotLabel: SLOT_DISPLAY_NAMES[slotShort] || slotShort,
+        slotLabel,
         slotShort,
+        isAberrant: !!isAberrant,
         ability: {
-          name: abNode.label,
+          name: displayAbilityName,
           stats: statDisplay,
           upgrades: upgradeStamps,
         },
@@ -1087,9 +1200,11 @@
     // Ability cards
     const grid = document.getElementById("hc-ability-grid");
     grid.innerHTML = "";
-    kit.slots.forEach(({ slotLabel, slotShort, ability }) => {
+    kit.slots.forEach(({ slotLabel, slotShort, ability, isAberrant }) => {
       const card = document.createElement("div");
-      card.className = "ability-card" + (slotShort === "slot/WeaponPrimary" ? " weapon-card" : "");
+      card.className = "ability-card"
+        + (slotShort === "slot/WeaponPrimary" ? " weapon-card" : "")
+        + (isAberrant ? " aberrant-card" : "");
 
       const slotEl = document.createElement("div");
       slotEl.className = "ability-slot";
