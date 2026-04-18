@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Nydus — Deadlock Ontology Graph</title>
+
+  <meta property="og:title" content="Nydus — Deadlock Ontology Graph">
+  <meta property="og:description" content="Navigable knowledge graph of every Deadlock hero's abilities, properties, and stat scaling. Click a hero to explore.">
+  <meta property="og:type" content="website">
+  <meta name="twitter:card" content="summary">
+  <meta name="twitter:title" content="Nydus — Deadlock Ontology Graph">
+  <meta name="twitter:description" content="Navigable knowledge graph of every Deadlock hero's abilities, properties, and stat scaling.">
+  <meta name="theme-color" content="#0d1117">
+
+  <link rel="stylesheet" href="styles.css">
+  <script src="lib/cytoscape.min.js"></script>
+  <script src="lib/layout-base.js"></script>
+  <script src="lib/cose-base.js"></script>
+  <script src="lib/cytoscape-fcose.js"></script>
+</head>
+<body>
+  <header>
+    <div class="title">
+      <span class="nydus-mark">Nydus</span>
+      <span class="subtitle">Deadlock ontology &middot; <span id="meta-summary">loading&hellip;</span></span>
+    </div>
+    <div class="actions">
+      <label class="hero-picker-label" for="hero-picker">Hero</label>
+      <select id="hero-picker" class="hero-picker"></select>
+      <button id="btn-share" title="Copy shareable link">Share</button>
+      <button id="btn-reset">Reset</button>
+      <button id="btn-expand-all">Expand all</button>
+      <button id="btn-collapse-all">Collapse</button>
+    </div>
+  </header>
+
+  <div id="onboarding" class="onboarding" hidden>
+    <div class="onboarding-card">
+      <h2>Welcome to <span class="nydus-mark">Nydus</span></h2>
+      <p>A navigable knowledge graph of Deadlock's hero abilities — built from the game's own data files.</p>
+      <ul>
+        <li><b>Pick a hero</b> from the dropdown up top (or use the URL hash <code>#hero/Infernus</code>).</li>
+        <li><b>Click a node</b> to inspect its triples and walk its neighbors.</li>
+        <li><b>Double-click</b> a node to collapse its expansion.</li>
+        <li><b>Share</b> copies a URL that deep-links to whatever you're viewing.</li>
+      </ul>
+      <button id="btn-onboarding-close">Got it</button>
+    </div>
+  </div>
+
+  <main>
+    <aside id="sidebar-left">
+      <h3>Filters</h3>
+      <p class="hint">Toggle node classes on/off. Class legend doubles as filter.</p>
+      <div id="class-filters"></div>
+      <h3>Edge predicates</h3>
+      <div id="edge-filters"></div>
+      <h3>Jump to node</h3>
+      <input type="text" id="node-search" placeholder="Type to filter...">
+      <ul id="node-list"></ul>
+    </aside>
+
+    <div id="graph"></div>
+
+    <aside id="sidebar-right">
+      <div id="inspector-empty">
+        <h3>Inspector</h3>
+        <p class="hint">Click a node to see its triples, incoming and outgoing edges, and provenance.</p>
+        <p class="hint">Click an edge target to navigate. Double-click a node to collapse its expansion.</p>
+      </div>
+      <div id="inspector" hidden>
+        <div class="inspector-header">
+          <span id="inspector-class-tags"></span>
+          <h2 id="inspector-label"></h2>
+          <div class="inspector-iri">
+            <code id="inspector-iri"></code>
+            <button id="btn-copy-iri" title="Copy IRI">copy</button>
+          </div>
+        </div>
+        <section>
+          <h4>Literal properties</h4>
+          <table id="inspector-props"><tbody></tbody></table>
+          <p class="empty-note" id="props-empty">(none)</p>
+        </section>
+        <section>
+          <h4>Outgoing</h4>
+          <ul id="inspector-outgoing"></ul>
+          <p class="empty-note" id="outgoing-empty">(none)</p>
+        </section>
+        <section>
+          <h4>Incoming</h4>
+          <ul id="inspector-incoming"></ul>
+          <p class="empty-note" id="incoming-empty">(none)</p>
+        </section>
+      </div>
+    </aside>
+  </main>
+
+  <script src="viewer.js"></script>
+</body>
+</html>

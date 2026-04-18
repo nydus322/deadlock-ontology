@@ -1,0 +1,500 @@
+@base            <http://nydus.gg/source/> .
+@prefix nydus:   <http://nydus.gg/ontology#> .
+@prefix hero:    <http://nydus.gg/ontology#hero/> .
+@prefix ability: <http://nydus.gg/ontology#ability/> .
+@prefix stat:    <http://nydus.gg/ontology#stat/> .
+@prefix mv:      <http://nydus.gg/ontology#mv/> .
+@prefix slot:    <http://nydus.gg/ontology#slot/> .
+@prefix sf:      <http://nydus.gg/ontology#sf/> .
+@prefix cat:     <http://nydus.gg/ontology#cat/> .
+@prefix stage:   <http://nydus.gg/ontology#stage/> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema:  <http://schema.org/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+
+# ============================================================
+# Property Categories  (cross-ability comparison anchors)
+# ============================================================
+
+cat:Charges  a nydus:PropertyCategory ; rdfs:label "Charges"@en .
+cat:Cooldown  a nydus:PropertyCategory ; rdfs:label "Cooldown"@en .
+cat:Damage  a nydus:PropertyCategory ; rdfs:label "Damage"@en .
+cat:Duration  a nydus:PropertyCategory ; rdfs:label "Duration"@en .
+cat:Healing  a nydus:PropertyCategory ; rdfs:label "Healing"@en .
+cat:Range  a nydus:PropertyCategory ; rdfs:label "Range"@en .
+cat:Speed  a nydus:PropertyCategory ; rdfs:label "Speed"@en .
+cat:Stack  a nydus:PropertyCategory ; rdfs:label "Stack"@en .
+cat:Stat  a nydus:PropertyCategory ; rdfs:label "Stat Modifier"@en .
+cat:Unknown  a nydus:PropertyCategory ; rdfs:label "Unknown"@en .
+cat:Weapon  a nydus:PropertyCategory ; rdfs:label "Weapon"@en .
+
+# ============================================================
+# Hero: Graves  (hero_necro  ID=76)
+# ============================================================
+
+hero:Necro
+    a nydus:Hero ;
+    rdfs:label "Graves"@en ;
+    skos:altLabel "Graves"@en ;
+    nydus:heroTag "Morbid" ;
+    nydus:heroTag "Area Denial" ;
+    nydus:heroTag "Necromancer" ;
+    schema:identifier "76"^^xsd:integer ;
+    nydus:internalKey "hero_necro" ;
+    nydus:developerStage stage:WIP ;
+    nydus:isPlayerSelectable true ;
+    nydus:isDisabled false ;
+    nydus:complexity "2"^^xsd:integer ;
+    nydus:heroType "ECitadelHeroType_Marksman" ;
+    nydus:abilityResourceType "EResourceType_None" ;
+    nydus:hasAbilityInSlot [ rdfs:label "Climb Rope"@en ; nydus:slot slot:AbilityClimbRope ; nydus:ability ability:ClimbRope ] ;
+    nydus:hasAbilityInSlot [ rdfs:label "Innate 1: Dash"@en ; nydus:slot slot:AbilityInnate1 ; nydus:ability ability:Dash ] ;
+    nydus:hasAbilityInSlot [ rdfs:label "Innate 2: Sprint"@en ; nydus:slot slot:AbilityInnate2 ; nydus:ability ability:Sprint ] ;
+    nydus:hasAbilityInSlot [ rdfs:label "Innate 3: Parry"@en ; nydus:slot slot:AbilityInnate3 ; nydus:ability ability:MeleeParry ] ;
+    nydus:hasAbilityInSlot [ rdfs:label "Jump"@en ; nydus:slot slot:AbilityJump ; nydus:ability ability:Jump ] ;
+    nydus:hasAbilityInSlot [ rdfs:label "Mantle"@en ; nydus:slot slot:AbilityMantle ; nydus:ability ability:Mantle ] ;
+    nydus:hasAbilityInSlot [ rdfs:label "Slide"@en ; nydus:slot slot:AbilitySlide ; nydus:ability ability:Slide ] ;
+    nydus:hasAbilityInSlot [ rdfs:label "Zip Line: Hyperline"@en ; nydus:slot slot:AbilityZipLine ; nydus:ability ability:ZipLine ] ;
+    nydus:hasAbilityInSlot [ rdfs:label "Zip Line Boost: Zipline Boosted"@en ; nydus:slot slot:AbilityZipLineBoost ; nydus:ability ability:ZiplineBoost ] ;
+    nydus:hasAbilityInSlot [ rdfs:label "Ability 1: Jar of Dead"@en ; nydus:slot slot:Signature1 ; nydus:ability ability:NecroHauntingskull ] ;
+    nydus:hasAbilityInSlot [ rdfs:label "Ability 2: Grasping Hands"@en ; nydus:slot slot:Signature2 ; nydus:ability ability:NecroZombiewall ] ;
+    nydus:hasAbilityInSlot [ rdfs:label "Ability 3: Essence Theft"@en ; nydus:slot slot:Signature3 ; nydus:ability ability:NecroFear ] ;
+    nydus:hasAbilityInSlot [ rdfs:label "Ultimate: Borrowed Decree"@en ; nydus:slot slot:Signature4 ; nydus:ability ability:NecroGravestone ] ;
+    nydus:hasAbilityInSlot [ rdfs:label "Melee"@en ; nydus:slot slot:WeaponMelee ; nydus:ability ability:MeleeNecro ] ;
+    nydus:hasAbilityInSlot [ rdfs:label "Primary Weapon: Necro Set"@en ; nydus:slot slot:WeaponPrimary ; nydus:ability ability:WeaponNecroSet ] ;
+    nydus:startingMaxMoveSpeed "7"^^xsd:decimal ;
+    nydus:startingSprintSpeed "1.6"^^xsd:decimal ;
+    nydus:startingMaxHealth "740"^^xsd:decimal ;
+    nydus:startingBaseHealthRegen "1"^^xsd:decimal ;
+    nydus:startingStamina "2"^^xsd:decimal ;
+    nydus:startingStaminaRegenPerSecond "0.222222"^^xsd:decimal ;
+    nydus:startingReloadSpeed "1"^^xsd:decimal ;
+    nydus:startingLightMeleeDamage "50"^^xsd:decimal ;
+    nydus:startingHeavyMeleeDamage "116"^^xsd:decimal ;
+    nydus:startingBulletLifesteal "8"^^xsd:decimal ;
+    nydus:startingTechDuration "1"^^xsd:decimal ;
+    nydus:startingTechRange "1"^^xsd:decimal ;
+    prov:wasDerivedFrom <scripts/heroes.vdata> .
+
+# Ability: Dash  (citadel_ability_dash)
+ability:Dash
+    a nydus:Ability ;
+    rdfs:label "Dash"@en ;
+    nydus:internalKey "citadel_ability_dash" ;
+    nydus:abilityType "EAbilityType_Innate" ;
+    nydus:activationType "CITADEL_ABILITY_ACTIVATION_INSTANT_CAST" ;
+    nydus:hasProperty [
+        a nydus:AbilityProperty ;
+        rdfs:label "Duration"@en ;
+        nydus:internalName "AbilityDuration" ;
+        nydus:baseValue "0.6"^^xsd:decimal ;
+        nydus:primaryCategory cat:Duration ;
+        nydus:categoryDeterminism "high" ;
+        nydus:scalesStat stat:TechDuration ;
+        nydus:scaleFunction "scale_function_single_stat" ;
+    ] ;
+    prov:wasDerivedFrom <scripts/abilities.vdata> .
+
+# Ability: Sprint  (citadel_ability_sprint)
+ability:Sprint
+    a nydus:Ability ;
+    rdfs:label "Sprint"@en ;
+    nydus:internalKey "citadel_ability_sprint" ;
+    nydus:abilityType "EAbilityType_Innate" ;
+    nydus:activationType "CITADEL_ABILITY_ACTIVATION_PASSIVE" ;
+    prov:wasDerivedFrom <scripts/abilities.vdata> .
+
+# Ability: Parry  (citadel_ability_melee_parry)
+ability:MeleeParry
+    a nydus:Ability ;
+    rdfs:label "Parry"@en ;
+    nydus:internalKey "citadel_ability_melee_parry" ;
+    nydus:abilityType "EAbilityType_Innate" ;
+    nydus:activationType "CITADEL_ABILITY_ACTIVATION_INSTANT_CAST" ;
+    nydus:hasProperty [
+        a nydus:AbilityProperty ;
+        rdfs:label "Cooldown"@en ;
+        nydus:internalName "AbilityCooldown" ;
+        nydus:baseValue "4.5"^^xsd:decimal ;
+        nydus:primaryCategory cat:Cooldown ;
+        nydus:categoryDeterminism "high" ;
+        nydus:scalesStat stat:ParryCooldown ;
+        nydus:scaleFactor "-1"^^xsd:decimal ;
+        nydus:scaleFunction "scale_function_single_stat" ;
+    ] ;
+    prov:wasDerivedFrom <scripts/abilities.vdata> .
+
+# Ability: Jar of Dead  (ability_necro_hauntingskull)
+ability:NecroHauntingskull
+    a nydus:Ability ;
+    rdfs:label "Jar of Dead"@en ;
+    nydus:internalKey "ability_necro_hauntingskull" ;
+    nydus:abilityType "EAbilityType_Signature" ;
+    nydus:activationType "CITADEL_ABILITY_ACTIVATION_PRESS" ;
+    nydus:hasProperty [
+        a nydus:AbilityProperty ;
+        rdfs:label "Charges"@en ;
+        nydus:internalName "AbilityCharges" ;
+        nydus:baseValue "4"^^xsd:decimal ;
+        nydus:primaryCategory cat:Charges ;
+        nydus:categoryDeterminism "high" ;
+        nydus:scaleFunction "scale_function_ability_charges" ;
+    ] ;
+    nydus:hasProperty [
+        a nydus:AbilityProperty ;
+        rdfs:label "Damage"@en ;
+        nydus:internalName "Damage" ;
+        nydus:baseValue "20"^^xsd:decimal ;
+        nydus:primaryCategory cat:Damage ;
+        nydus:categoryDeterminism "high" ;
+        nydus:scaleFactor "0.35"^^xsd:decimal ;
+        nydus:scaleFunction "scale_function_tech_damage" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Heal Per Pickup"@en ;
+        nydus:upgradeLevel "1"^^xsd:integer ;
+        nydus:modifiesProperty "HealPerPickup" ;
+        nydus:bonusValue "5" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Heal Per Pickup"@en ;
+        nydus:upgradeLevel "1"^^xsd:integer ;
+        nydus:modifiesProperty "HealPerPickup" ;
+        nydus:bonusValue "0.1" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Slow Percent"@en ;
+        nydus:upgradeLevel "2"^^xsd:integer ;
+        nydus:modifiesProperty "SlowPercent" ;
+        nydus:bonusValue "30" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Slow Duration"@en ;
+        nydus:upgradeLevel "2"^^xsd:integer ;
+        nydus:modifiesProperty "SlowDuration" ;
+        nydus:bonusValue "1" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Skull Count"@en ;
+        nydus:upgradeLevel "3"^^xsd:integer ;
+        nydus:modifiesProperty "SkullCount" ;
+        nydus:bonusValue "2" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Skull Lifetime"@en ;
+        nydus:upgradeLevel "3"^^xsd:integer ;
+        nydus:modifiesProperty "SkullLifetime" ;
+        nydus:bonusValue "4" ;
+    ] ;
+    prov:wasDerivedFrom <scripts/abilities.vdata> .
+
+# Ability: Grasping Hands  (ability_necro_zombiewall)
+ability:NecroZombiewall
+    a nydus:Ability ;
+    rdfs:label "Grasping Hands"@en ;
+    nydus:internalKey "ability_necro_zombiewall" ;
+    nydus:abilityType "EAbilityType_Signature" ;
+    nydus:activationType "CITADEL_ABILITY_ACTIVATION_PRESS" ;
+    nydus:hasProperty [
+        a nydus:AbilityProperty ;
+        rdfs:label "Cooldown"@en ;
+        nydus:internalName "AbilityCooldown" ;
+        nydus:baseValue "34"^^xsd:decimal ;
+        nydus:primaryCategory cat:Cooldown ;
+        nydus:categoryDeterminism "high" ;
+        nydus:scalesStat stat:TechCooldown ;
+        nydus:scaleFunction "scale_function_single_stat" ;
+    ] ;
+    nydus:hasProperty [
+        a nydus:AbilityProperty ;
+        rdfs:label "Duration"@en ;
+        nydus:internalName "AbilityDuration" ;
+        nydus:baseValue "5"^^xsd:decimal ;
+        nydus:primaryCategory cat:Duration ;
+        nydus:categoryDeterminism "high" ;
+        nydus:scalesStat stat:TechDuration ;
+        nydus:scaleFunction "scale_function_single_stat" ;
+    ] ;
+    nydus:hasProperty [
+        a nydus:AbilityProperty ;
+        rdfs:label "Cast Range"@en ;
+        nydus:internalName "AbilityCastRange" ;
+        nydus:baseValue "24m" ;
+        nydus:primaryCategory cat:Range ;
+        nydus:categoryDeterminism "high" ;
+        nydus:scalesStat stat:TechRange ;
+        nydus:scaleFunction "scale_function_single_stat" ;
+    ] ;
+    nydus:hasProperty [
+        a nydus:AbilityProperty ;
+        rdfs:label "Damage"@en ;
+        nydus:internalName "Damage" ;
+        nydus:baseValue "90"^^xsd:decimal ;
+        nydus:primaryCategory cat:Damage ;
+        nydus:categoryDeterminism "high" ;
+        nydus:scaleFactor "1.6"^^xsd:decimal ;
+        nydus:scaleFunction "scale_function_tech_damage" ;
+    ] ;
+    nydus:hasProperty [
+        a nydus:AbilityProperty ;
+        rdfs:label "Slow Percent"@en ;
+        nydus:internalName "SlowPercent" ;
+        nydus:baseValue "40"^^xsd:decimal ;
+        nydus:primaryCategory cat:Speed ;
+        nydus:categoryDeterminism "low" ;
+        nydus:categoryNote "Speed debuff — reduces target movement by percentage; filed under Speed as the affected stat" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Duration"@en ;
+        nydus:upgradeLevel "1"^^xsd:integer ;
+        nydus:modifiesProperty "AbilityDuration" ;
+        nydus:bonusValue "2" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Damage"@en ;
+        nydus:upgradeLevel "2"^^xsd:integer ;
+        nydus:modifiesProperty "Damage" ;
+        nydus:bonusValue "90" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Zombie Wall Length"@en ;
+        nydus:upgradeLevel "2"^^xsd:integer ;
+        nydus:modifiesProperty "ZombieWallLength" ;
+        nydus:bonusValue "10m" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Immobilize Duration"@en ;
+        nydus:upgradeLevel "3"^^xsd:integer ;
+        nydus:modifiesProperty "ImmobilizeDuration" ;
+        nydus:bonusValue "1.0" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Gangsters Summoned"@en ;
+        nydus:upgradeLevel "3"^^xsd:integer ;
+        nydus:modifiesProperty "SummonCount" ;
+        nydus:bonusValue "1" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Cooldown"@en ;
+        nydus:upgradeLevel "3"^^xsd:integer ;
+        nydus:modifiesProperty "AbilityCooldown" ;
+        nydus:bonusValue "-10" ;
+    ] ;
+    prov:wasDerivedFrom <scripts/abilities.vdata> .
+
+# Ability: Essence Theft  (ability_necro_fear)
+ability:NecroFear
+    a nydus:Ability ;
+    rdfs:label "Essence Theft"@en ;
+    nydus:internalKey "ability_necro_fear" ;
+    nydus:abilityType "EAbilityType_Signature" ;
+    nydus:activationType "CITADEL_ABILITY_ACTIVATION_PASSIVE" ;
+    nydus:hasProperty [
+        a nydus:AbilityProperty ;
+        rdfs:label "Duration"@en ;
+        nydus:internalName "AbilityDuration" ;
+        nydus:baseValue "4"^^xsd:decimal ;
+        nydus:primaryCategory cat:Duration ;
+        nydus:categoryDeterminism "high" ;
+        nydus:scalesStat stat:TechDuration ;
+        nydus:scaleFunction "scale_function_single_stat" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Max Stolen Spirit Resist"@en ;
+        nydus:upgradeLevel "1"^^xsd:integer ;
+        nydus:modifiesProperty "MaxStolenSpiritResist" ;
+        nydus:bonusValue "5" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Max Stolen Attack Damage"@en ;
+        nydus:upgradeLevel "2"^^xsd:integer ;
+        nydus:modifiesProperty "MaxStolenAttackDamage" ;
+        nydus:bonusValue "20" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Skull Build Up"@en ;
+        nydus:upgradeLevel "3"^^xsd:integer ;
+        nydus:modifiesProperty "SkullBuildUp" ;
+        nydus:bonusValue "0.15" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Zombie Melee Build Up"@en ;
+        nydus:upgradeLevel "3"^^xsd:integer ;
+        nydus:modifiesProperty "ZombieMeleeBuildUp" ;
+        nydus:bonusValue "0.15" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Zombie Explosion Build Up"@en ;
+        nydus:upgradeLevel "3"^^xsd:integer ;
+        nydus:modifiesProperty "ZombieExplosionBuildUp" ;
+        nydus:bonusValue "1.0" ;
+    ] ;
+    prov:wasDerivedFrom <scripts/abilities.vdata> .
+
+# Ability: Borrowed Decree  (ability_necro_gravestone)
+ability:NecroGravestone
+    a nydus:Ability ;
+    rdfs:label "Borrowed Decree"@en ;
+    nydus:internalKey "ability_necro_gravestone" ;
+    nydus:abilityType "EAbilityType_Ultimate" ;
+    nydus:activationType "CITADEL_ABILITY_ACTIVATION_PRESS" ;
+    nydus:hasProperty [
+        a nydus:AbilityProperty ;
+        rdfs:label "Cooldown"@en ;
+        nydus:internalName "AbilityCooldown" ;
+        nydus:baseValue "120"^^xsd:decimal ;
+        nydus:primaryCategory cat:Cooldown ;
+        nydus:categoryDeterminism "high" ;
+        nydus:scalesStat stat:TechCooldown ;
+        nydus:scaleFunction "scale_function_single_stat" ;
+    ] ;
+    nydus:hasProperty [
+        a nydus:AbilityProperty ;
+        rdfs:label "Duration"@en ;
+        nydus:internalName "AbilityDuration" ;
+        nydus:baseValue "16"^^xsd:decimal ;
+        nydus:primaryCategory cat:Duration ;
+        nydus:categoryDeterminism "high" ;
+        nydus:scalesStat stat:TechPower ;
+        nydus:scaleFactor "0.04"^^xsd:decimal ;
+        nydus:scaleFunction "scale_function_multi_stats" ;
+        nydus:scalesStat stat:TechPower ;
+        nydus:scalesStat stat:TechDuration ;
+    ] ;
+    nydus:hasProperty [
+        a nydus:AbilityProperty ;
+        rdfs:label "Cast Range"@en ;
+        nydus:internalName "AbilityCastRange" ;
+        nydus:baseValue "20m" ;
+        nydus:primaryCategory cat:Range ;
+        nydus:categoryDeterminism "high" ;
+        nydus:scalesStat stat:TechRange ;
+        nydus:scaleFunction "scale_function_single_stat" ;
+    ] ;
+    nydus:hasProperty [
+        a nydus:AbilityProperty ;
+        rdfs:label "Damage"@en ;
+        nydus:internalName "Damage" ;
+        nydus:baseValue "135"^^xsd:decimal ;
+        nydus:primaryCategory cat:Damage ;
+        nydus:categoryDeterminism "high" ;
+        nydus:scaleFactor "1.5"^^xsd:decimal ;
+        nydus:scaleFunction "scale_function_tech_damage" ;
+    ] ;
+    nydus:hasProperty [
+        a nydus:AbilityProperty ;
+        rdfs:label "Max Stacks"@en ;
+        nydus:internalName "MaxStacks" ;
+        nydus:baseValue "40"^^xsd:decimal ;
+        nydus:primaryCategory cat:Stack ;
+        nydus:categoryDeterminism "high" ;
+    ] ;
+    nydus:hasProperty [
+        a nydus:AbilityProperty ;
+        rdfs:label "Slow Percent"@en ;
+        nydus:internalName "SlowPercent" ;
+        nydus:baseValue "80"^^xsd:decimal ;
+        nydus:primaryCategory cat:Speed ;
+        nydus:categoryDeterminism "low" ;
+        nydus:categoryNote "Speed debuff — reduces target movement by percentage; filed under Speed as the affected stat" ;
+        nydus:providesModifierType mv:MovementSpeedSlowPercent ;
+    ] ;
+    nydus:hasProperty [
+        a nydus:AbilityProperty ;
+        rdfs:label "Slow Duration"@en ;
+        nydus:internalName "SlowDuration" ;
+        nydus:baseValue "1.25"^^xsd:decimal ;
+        nydus:primaryCategory cat:Duration ;
+        nydus:secondaryCategory cat:Speed ;
+        nydus:categoryDeterminism "low" ;
+        nydus:categoryNote "Duration of a speed debuff — temporal in form, speed in function" ;
+        nydus:scaleFunction "scale_function_tech_duration" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Cooldown"@en ;
+        nydus:upgradeLevel "1"^^xsd:integer ;
+        nydus:modifiesProperty "AbilityCooldown" ;
+        nydus:bonusValue "-20" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Move Speed Percent"@en ;
+        nydus:upgradeLevel "2"^^xsd:integer ;
+        nydus:modifiesProperty "MoveSpeedPercent" ;
+        nydus:bonusValue "25" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Duration"@en ;
+        nydus:upgradeLevel "2"^^xsd:integer ;
+        nydus:modifiesProperty "AbilityDuration" ;
+        nydus:bonusValue "10" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Current Health Damage Percentage"@en ;
+        nydus:upgradeLevel "3"^^xsd:integer ;
+        nydus:modifiesProperty "CurrentHealthDamagePercentage" ;
+        nydus:bonusValue "6" ;
+    ] ;
+    prov:wasDerivedFrom <scripts/abilities.vdata> .
+
+# ============================================================
+# Vocabulary labels  (stat / slot / scale-function / modifier / shared abilities)
+# ============================================================
+
+ability:ClimbRope  rdfs:label "Climb Rope"@en .
+ability:Jump  rdfs:label "Jump"@en .
+ability:Mantle  rdfs:label "Mantle"@en .
+ability:MeleeNecro  rdfs:label "Melee"@en .
+ability:Slide  rdfs:label "Slide"@en .
+ability:WeaponNecroSet  rdfs:label "Necro Set"@en .
+ability:ZipLine  rdfs:label "Hyperline"@en .
+ability:ZiplineBoost  rdfs:label "Zipline Boosted"@en .
+stat:ParryCooldown  a nydus:Stat ; rdfs:label "Parry Cooldown"@en .
+stat:TechCooldown  a nydus:Stat ; rdfs:label "Ability Cooldown"@en .
+stat:TechDuration  a nydus:Stat ; rdfs:label "Ability Duration"@en .
+stat:TechPower  a nydus:Stat ; rdfs:label "Spirit Power"@en .
+stat:TechRange  a nydus:Stat ; rdfs:label "Ability Range"@en .
+slot:AbilityClimbRope  a nydus:Slot ; rdfs:label "Climb Rope"@en .
+slot:AbilityInnate1  a nydus:Slot ; rdfs:label "Innate 1"@en .
+slot:AbilityInnate2  a nydus:Slot ; rdfs:label "Innate 2"@en .
+slot:AbilityInnate3  a nydus:Slot ; rdfs:label "Innate 3"@en .
+slot:AbilityJump  a nydus:Slot ; rdfs:label "Jump"@en .
+slot:AbilityMantle  a nydus:Slot ; rdfs:label "Mantle"@en .
+slot:AbilitySlide  a nydus:Slot ; rdfs:label "Slide"@en .
+slot:AbilityZipLine  a nydus:Slot ; rdfs:label "Zip Line"@en .
+slot:AbilityZipLineBoost  a nydus:Slot ; rdfs:label "Zip Line Boost"@en .
+slot:Signature1  a nydus:Slot ; rdfs:label "Ability 1"@en .
+slot:Signature2  a nydus:Slot ; rdfs:label "Ability 2"@en .
+slot:Signature3  a nydus:Slot ; rdfs:label "Ability 3"@en .
+slot:Signature4  a nydus:Slot ; rdfs:label "Ultimate"@en .
+slot:WeaponMelee  a nydus:Slot ; rdfs:label "Melee"@en .
+slot:WeaponPrimary  a nydus:Slot ; rdfs:label "Primary Weapon"@en .
+mv:MovementSpeedSlowPercent  a nydus:ModifierValue ; rdfs:label "Movement Speed Slow Percent"@en .
+sf:AbilityCharges  a nydus:ScaleFunction ; rdfs:label "Scales with Ability Charges"@en .
+sf:MultiStats  a nydus:ScaleFunction ; rdfs:label "Scales with Multiple Stats"@en .
+sf:SingleStat  a nydus:ScaleFunction ; rdfs:label "Scales with a Single Stat"@en .
+sf:TechDamage  a nydus:ScaleFunction ; rdfs:label "Scales with Spirit Power"@en .
+sf:TechDuration  a nydus:ScaleFunction ; rdfs:label "Scales with Spirit Duration"@en .

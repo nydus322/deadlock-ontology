@@ -1,0 +1,20 @@
+# Generated / derived — regenerate from your own Deadlock install
+extracted/
+
+# Python
+__pycache__/
+*.pyc
+*.pyo
+
+# Third-party binaries — fetch from upstream
+# (Source2Viewer CLI from github.com/ValveResourceFormat/ValveResourceFormat/releases)
+tools/vrf/
+
+# Local tooling config
+.claude/settings.local.json
+.claude/*.lock
+
+# OS
+.DS_Store
+Thumbs.db
+desktop.ini

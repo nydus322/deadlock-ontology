@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Nydus — Deadlock Knowledge Graph</title>
+<style>
+  :root {
+    --bg: #0d1117; --bg2: #161b22; --bg3: #21262d;
+    --border: #30363d; --text: #e6edf3; --muted: #8b949e;
+    --spirit: #9b6dff; --weapon: #f5a623; --vitality: #4fc24f;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  body {
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    font-size: 14px; line-height: 1.6;
+  }
+  a { color: var(--spirit); }
+  code { background: var(--bg3); padding: 2px 6px; border-radius: 4px;
+          font-family: 'SF Mono', Consolas, monospace; font-size: 12px; }
+
+  /* Layout */
+  .header {
+    background: linear-gradient(135deg, #1a0a2e 0%, #0d1117 60%);
+    border-bottom: 1px solid var(--border);
+    padding: 48px 40px 32px;
+  }
+  .header h1 { font-size: 36px; font-weight: 700; letter-spacing: -1px;
+    background: linear-gradient(90deg, var(--spirit), #c084fc);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+  .header .subtitle { color: var(--muted); margin-top: 8px; font-size: 15px; }
+  .header .stats-row { display: flex; gap: 32px; margin-top: 24px; }
+  .header .stat-pill { background: var(--bg3); border: 1px solid var(--border);
+    border-radius: 20px; padding: 6px 16px; font-size: 13px; }
+  .header .stat-pill b { color: var(--spirit); }
+
+  nav { display: flex; gap: 0; border-bottom: 1px solid var(--border);
+         background: var(--bg2); padding: 0 40px; }
+  nav a { padding: 14px 20px; color: var(--muted); text-decoration: none;
+           border-bottom: 2px solid transparent; font-size: 13px; font-weight: 500; }
+  nav a:hover { color: var(--text); border-color: var(--spirit); }
+
+  main { max-width: 1100px; margin: 0 auto; padding: 40px; }
+  section { margin-bottom: 64px; }
+
+  .section-label {
+    font-size: 11px; font-weight: 700; letter-spacing: 2px;
+    color: var(--spirit); text-transform: uppercase; margin-bottom: 16px;
+  }
+  h3 { font-size: 16px; font-weight: 600; margin: 24px 0 12px;
+        display: flex; align-items: center; gap: 10px; }
+  .count { background: var(--bg3); border: 1px solid var(--border);
+            border-radius: 12px; padding: 1px 10px; font-size: 12px; color: var(--muted); }
+  .note { font-size: 12px; color: var(--muted); font-weight: 400; }
+
+  /* Hero header */
+  .hero-header { background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 12px; padding: 24px; margin-bottom: 24px; }
+  .hero-name { font-size: 32px; font-weight: 800; letter-spacing: -1px; }
+  .hero-sub { color: var(--muted); font-size: 13px; margin-top: 4px; }
+  .hero-tags { display: flex; gap: 8px; margin-top: 12px; flex-wrap: wrap; }
+  .hero-tag { background: var(--spirit)22; border: 1px solid var(--spirit)44;
+    color: var(--spirit); border-radius: 12px; padding: 3px 12px; font-size: 12px; }
+  .hero-basestats { display: flex; gap: 24px; margin-top: 16px; }
+  .basestat { display: flex; flex-direction: column; }
+  .basestat span { font-size: 11px; color: var(--muted); text-transform: uppercase;
+                    letter-spacing: 1px; }
+  .basestat b { font-size: 22px; font-weight: 700; }
+
+  /* Ability cards */
+  .card-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 16px; }
+  .ability-card { background: var(--bg2); border: 1px solid var(--border);
+    border-radius: 10px; overflow: hidden; }
+  .ability-header { padding: 14px 16px 10px; background: var(--bg3); }
+  .ability-title { font-size: 15px; font-weight: 700; }
+  .ability-meta { display: flex; gap: 6px; flex-wrap: wrap; margin-top: 6px; align-items: center; }
+  .tag { padding: 2px 8px; border-radius: 10px; font-size: 11px; font-weight: 600; }
+  .tag.neutral { background: var(--bg); color: var(--muted); }
+  .slot-badge { font-size: 11px; color: var(--muted); margin-left: auto; }
+  .ability-stats { padding: 12px 16px; display: flex; flex-direction: column; gap: 6px; }
+  .stat-row { display: flex; align-items: center; gap: 8px; flex-wrap: wrap; }
+  .stat-name { font-size: 12px; color: var(--muted); min-width: 110px; }
+  .stat-val { font-weight: 700; font-size: 14px; }
+  .scale-badge { font-size: 11px; padding: 2px 8px; border-radius: 10px;
+    border: 1px solid; font-weight: 600; white-space: nowrap; }
+  .muted { color: var(--muted); font-size: 12px; }
+  .upgrades { padding: 10px 16px 14px; border-top: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 4px; }
+  .upgrade { font-size: 12px; color: var(--muted); }
+  .upgrade.t1 b { color: #7ec8e3; }
+  .upgrade.t2 b { color: #f5a623; }
+  .upgrade.t3 b { color: var(--spirit); }
+
+  /* Roster */
+  .chip-grid { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 8px; }
+  .hero-chip { background: var(--bg2); border: 1px solid; border-radius: 8px;
+    padding: 6px 12px; display: flex; align-items: center; gap: 10px; }
+  .chip-name { font-weight: 600; font-size: 13px; }
+  .chip-id { font-size: 11px; color: var(--muted); }
+  .chip-stage { font-size: 10px; color: var(--muted); text-transform: uppercase;
+                 letter-spacing: 1px; }
+  .unknown-badge { background: #e8c43a33; color: #e8c43a; border-radius: 4px;
+    padding: 1px 5px; font-size: 10px; font-weight: 700; }
+  .deleted-note { margin-top: 20px; padding: 14px 18px; background: var(--bg2);
+    border: 1px solid var(--border); border-radius: 8px; color: var(--muted);
+    font-size: 13px; }
+
+  /* Stat web */
+  .explainer { color: var(--muted); font-size: 13px; margin-bottom: 20px;
+                max-width: 680px; line-height: 1.7; }
+  .mv-table { width: 100%; border-collapse: collapse; }
+  .mv-table th { text-align: left; padding: 8px 12px; font-size: 11px;
+    text-transform: uppercase; letter-spacing: 1px; color: var(--muted);
+    border-bottom: 1px solid var(--border); }
+  .mv-table td { padding: 7px 12px; border-bottom: 1px solid var(--border)44; }
+  .mv-name { font-size: 13px; font-weight: 500; width: 280px; }
+  .mv-count { color: var(--muted); font-size: 13px; text-align: right; width: 60px; }
+  .bar { height: 8px; border-radius: 4px; min-width: 4px; }
+
+  /* Footer */
+  footer { text-align: center; padding: 40px; color: var(--muted); font-size: 12px;
+            border-top: 1px solid var(--border); }
+</style>
+</head>
+<body>
+
+<div class="header">
+  <h1>Nydus — Deadlock Knowledge Graph</h1>
+  <p class="subtitle">
+    Every number below was extracted directly from Valve's game data.
+    No guessing. No wiki. The structure of the game, made queryable.
+  </p>
+  <div class="stats-row">
+    <div class="stat-pill"><b>63</b> heroes in data</div>
+    <div class="stat-pill"><b>803</b> abilities / items</div>
+    <div class="stat-pill"><b>4,884</b> stat scaling edges</div>
+    <div class="stat-pill"><b>99</b> distinct stat types</div>
+    <div class="stat-pill"><b>209</b> triples for Abrams alone</div>
+  </div>
+</div>
+
+<nav>
+  <a href="#abrams">Abrams</a>
+  <a href="#roster">Roster</a>
+  <a href="#stat-web">Stat Web</a>
+</nav>
+
+<main>
+
+<section id="abrams">
+  <div class="section-label">HERO — DATA VERIFIED</div>
+  <div class="hero-header">
+    <div class="hero-name">Abrams</div>
+    <div class="hero-sub">Internal key: <code>hero_atlas</code> &nbsp;|&nbsp; ID #6</div>
+    <div class="hero-tags"><span class="hero-tag">Tank</span> <span class="hero-tag">Brawler</span> <span class="hero-tag">Bull-Headed</span></div>
+    <div class="hero-basestats">
+      <div class="basestat"><span>HP</span><b>810</b></div>
+      <div class="basestat"><span>Move Speed</span><b>6.4</b></div>
+      <div class="basestat"><span>Stamina</span><b>3</b></div>
+      <div class="basestat"><span>HP Regen</span><b>1.5/s</b></div>
+    </div>
+  </div>
+  <h3>Signature Abilities</h3>
+  <div class="card-grid">
+<div class="ability-card">
+  <div class="ability-header" style="border-left:4px solid #9b6dff">
+    <div class="ability-title">Heal</div>
+    <div class="ability-meta">
+      <span class="tag" style="background:#9b6dff22;color:#9b6dff">Signature</span>
+      <span class="tag neutral">Instant Cast</span>
+      <span class="slot-badge">Signature1</span>
+    </div>
+  </div>
+  <div class="ability-stats"><div class="stat-row"><span class="stat-name">Cooldown</span><span class="stat-val">42</span><span class="scale-badge" style="background:#9b6dff20;border-color:#9b6dff;color:#9b6dff">🔗 TechCooldown</span></div>
+<div class="stat-row"><span class="stat-name">CooldownScalesStat</span><span class="stat-val">http://nydus.gg/ontology#stat/TechCooldown</span></div>
+<div class="stat-row"><span class="stat-name">CooldownScaleFunction</span><span class="stat-val">scale_function_single_stat</span></div>
+<div class="stat-row"><span class="stat-name">Duration</span><span class="stat-val">4</span><span class="scale-badge" style="background:#9b6dff20;border-color:#9b6dff;color:#9b6dff">🔗 TechDuration</span></div>
+<div class="stat-row"><span class="stat-name">DurationScalesStat</span><span class="stat-val">http://nydus.gg/ontology#stat/TechDuration</span></div>
+<div class="stat-row"><span class="stat-name">DurationScaleFunction</span><span class="stat-val">scale_function_single_stat</span></div></div>
+  <div class="upgrades"><span class="upgrade t1">T1 AbilityCooldown: <b>-20.0</b></span>
+<span class="upgrade t2">T2 AbilityDuration: <b>2</b></span>
+<span class="upgrade t3">T3 DPS: <b>18</b></span>
+<span class="upgrade t3">T3 DPS: <b>0.12</b></span>
+<span class="upgrade t3">T3 Radius: <b>3m</b></span></div>
+</div>
+<div class="ability-card">
+  <div class="ability-header" style="border-left:4px solid #9b6dff">
+    <div class="ability-title">Shoulder Charge</div>
+    <div class="ability-meta">
+      <span class="tag" style="background:#9b6dff22;color:#9b6dff">Signature</span>
+      <span class="tag neutral">Instant Cast</span>
+      <span class="slot-badge">Signature2</span>
+    </div>
+  </div>
+  <div class="ability-stats"><div class="stat-row"><span class="stat-name">Cooldown</span><span class="stat-val">33</span><span class="scale-badge" style="background:#9b6dff20;border-color:#9b6dff;color:#9b6dff">🔗 TechCooldown</span></div>
+<div class="stat-row"><span class="stat-name">CooldownScalesStat</span><span class="stat-val">http://nydus.gg/ontology#stat/TechCooldown</span></div>
+<div class="stat-row"><span class="stat-name">CooldownScaleFunction</span><span class="stat-val">scale_function_single_stat</span></div>
+<div class="stat-row"><span class="stat-name">Duration</span><span class="stat-val">1.4</span><span class="scale-badge" style="background:#9b6dff20;border-color:#9b6dff;color:#9b6dff">🔗 TechDuration</span></div>
+<div class="stat-row"><span class="stat-name">DurationScalesStat</span><span class="stat-val">http://nydus.gg/ontology#stat/TechDuration</span></div>
+<div class="stat-row"><span class="stat-name">DurationScaleFunction</span><span class="stat-val">scale_function_single_stat</span></div>
+<div class="stat-row"><span class="stat-name">Damage</span><span class="stat-val">30</span><span class="scale-badge" style="background:#9b6dff20;border-color:#9b6dff;color:#9b6dff">🔗 TechPower ×1.4</span></div>
+<div class="stat-row"><span class="stat-name">DamageScalesStat</span><span class="stat-val">http://nydus.gg/ontology#stat/TechPower</span></div>
+<div class="stat-row"><span class="stat-name">DamageScaleFactor</span><span class="stat-val">1.4</span></div>
+<div class="stat-row"><span class="stat-name">DamageScaleFunction</span><span class="stat-val">scale_function_tech_damage</span></div>
+<div class="stat-row"><span class="stat-name">Stun  Duration</span><span class="stat-val">0.3</span><span class="scale-badge" style="background:#9b6dff20;border-color:#9b6dff;color:#9b6dff">🔗 TechDuration</span></div>
+<div class="stat-row"><span class="stat-name">Stun  DurationScalesStat</span><span class="stat-val">http://nydus.gg/ontology#stat/TechDuration</span></div>
+<div class="stat-row"><span class="stat-name">Stun  DurationScaleFunction</span><span class="stat-val">scale_function_single_stat</span></div>
+<div class="stat-row"><span class="stat-name">SpeedInitial</span><span class="stat-val">18.75m</span></div>
+<div class="stat-row"><span class="stat-name">Charge SpeedMax</span><span class="stat-val">30m</span></div>
+<div class="stat-row"><span class="stat-name">Charge Radius</span><span class="stat-val">2.2m</span></div></div>
+  <div class="upgrades"><span class="upgrade t1">T1 SlowPercent: <b>40</b></span>
+<span class="upgrade t1">T1 SlowDuration: <b>3</b></span>
+<span class="upgrade t2">T2 StunDuration: <b>0.8</b></span>
+<span class="upgrade t3">T3 AbilityCooldown: <b>-20</b></span>
+<span class="upgrade t3">T3 WeaponDamageBonus: <b>1.5</b></span>
+<span class="upgrade t3">T3 WeaponPowerIncreaseDuration: <b>6</b></span></div>
+</div>
+<div class="ability-card">
+  <div class="ability-header" style="border-left:4px solid #9b6dff">
+    <div class="ability-title">Passive Beefy</div>
+    <div class="ability-meta">
+      <span class="tag" style="background:#9b6dff22;color:#9b6dff">Signature</span>
+      <span class="tag neutral">Passive</span>
+      <span class="slot-badge">Signature3</span>
+    </div>
+  </div>
+  <div class="ability-stats"><div class="stat-row muted">No numeric stats extracted</div></div>
+  <div class="upgrades"><span class="upgrade t1">T1 BonusHealthRegen: <b>1.5</b></span>
+<span class="upgrade t2">T2 BonusMaxHealth: <b>200</b></span>
+<span class="upgrade t3">T3 RegenIncomingDamagePercent: <b>8</b></span>
+<span class="upgrade t3">T3 StatusResistancePercent: <b>20</b></span></div>
+</div>
+<div class="ability-card">
+  <div class="ability-header" style="border-left:4px solid #9b6dff">
+    <div class="ability-title">Leap</div>
+    <div class="ability-meta">
+      <span class="tag" style="background:#9b6dff22;color:#9b6dff">Ultimate</span>
+      <span class="tag neutral">Instant Cast</span>
+      <span class="slot-badge">Signature4</span>
+    </div>
+  </div>
+  <div class="ability-stats"><div class="stat-row"><span class="stat-name">Cooldown</span><span class="stat-val">185</span><span class="scale-badge" style="background:#9b6dff20;border-color:#9b6dff;color:#9b6dff">🔗 TechCooldown</span></div>
+<div class="stat-row"><span class="stat-name">CooldownScalesStat</span><span class="stat-val">http://nydus.gg/ontology#stat/TechCooldown</span></div>
+<div class="stat-row"><span class="stat-name">CooldownScaleFunction</span><span class="stat-val">scale_function_single_stat</span></div>
+<div class="stat-row"><span class="stat-name">Damage</span><span class="stat-val">100</span><span class="scale-badge" style="background:#9b6dff20;border-color:#9b6dff;color:#9b6dff">🔗 TechPower ×2.325</span></div>
+<div class="stat-row"><span class="stat-name">DamageScalesStat</span><span class="stat-val">http://nydus.gg/ontology#stat/TechPower</span></div>
+<div class="stat-row"><span class="stat-name">DamageScaleFactor</span><span class="stat-val">2.325</span></div>
+<div class="stat-row"><span class="stat-name">DamageScaleFunction</span><span class="stat-val">scale_function_tech_damage</span></div>
+<div class="stat-row"><span class="stat-name">Stun  Duration</span><span class="stat-val">1.6</span><span class="scale-badge" style="background:#9b6dff20;border-color:#9b6dff;color:#9b6dff">🔗 TechDuration</span></div>
+<div class="stat-row"><span class="stat-name">Stun  DurationScalesStat</span><span class="stat-val">http://nydus.gg/ontology#stat/TechDuration</span></div>
+<div class="stat-row"><span class="stat-name">Stun  DurationScaleFunction</span><span class="stat-val">scale_function_single_stat</span></div></div>
+  <div class="upgrades"><span class="upgrade t1">T1 AbilityCooldown: <b>-35.0</b></span>
+<span class="upgrade t2">T2 StunDuration: <b>0.7</b></span>
+<span class="upgrade t3">T3 ImmunityDuration: <b>5</b></span>
+<span class="upgrade t3">T3 ImpactRadius: <b>6m</b></span></div>
+</div></div>
+  <h3>Innate Abilities</h3>
+  <div class="card-grid">
+<div class="ability-card">
+  <div class="ability-header" style="border-left:4px solid #8a9bb0">
+    <div class="ability-title">Dash</div>
+    <div class="ability-meta">
+      <span class="tag" style="background:#8a9bb022;color:#8a9bb0">Innate</span>
+      <span class="tag neutral">Instant Cast</span>
+      <span class="slot-badge">AbilityInnate1</span>
+    </div>
+  </div>
+  <div class="ability-stats"><div class="stat-row"><span class="stat-name">Duration</span><span class="stat-val">0.6</span><span class="scale-badge" style="background:#9b6dff20;border-color:#9b6dff;color:#9b6dff">🔗 TechDuration</span></div>
+<div class="stat-row"><span class="stat-name">DurationScalesStat</span><span class="stat-val">http://nydus.gg/ontology#stat/TechDuration</span></div>
+<div class="stat-row"><span class="stat-name">DurationScaleFunction</span><span class="stat-val">scale_function_single_stat</span></div></div>
+  
+</div>
+<div class="ability-card">
+  <div class="ability-header" style="border-left:4px solid #8a9bb0">
+    <div class="ability-title">Sprint</div>
+    <div class="ability-meta">
+      <span class="tag" style="background:#8a9bb022;color:#8a9bb0">Innate</span>
+      <span class="tag neutral">Passive</span>
+      <span class="slot-badge">AbilityInnate2</span>
+    </div>
+  </div>
+  <div class="ability-stats"><div class="stat-row muted">No numeric stats extracted</div></div>
+  
+</div>
+<div class="ability-card">
+  <div class="ability-header" style="border-left:4px solid #8a9bb0">
+    <div class="ability-title">Parry</div>
+    <div class="ability-meta">
+      <span class="tag" style="background:#8a9bb022;color:#8a9bb0">Innate</span>
+      <span class="tag neutral">Instant Cast</span>
+      <span class="slot-badge">AbilityInnate3</span>
+    </div>
+  </div>
+  <div class="ability-stats"><div class="stat-row"><span class="stat-name">Cooldown</span><span class="stat-val">4.5</span><span class="scale-badge" style="background:#8a9bb020;border-color:#8a9bb0;color:#8a9bb0">🔗 ParryCooldown</span></div>
+<div class="stat-row"><span class="stat-name">CooldownScalesStat</span><span class="stat-val">http://nydus.gg/ontology#stat/ParryCooldown</span></div>
+<div class="stat-row"><span class="stat-name">CooldownScaleFactor</span><span class="stat-val">-1</span></div>
+<div class="stat-row"><span class="stat-name">CooldownScaleFunction</span><span class="stat-val">scale_function_single_stat</span></div></div>
+  
+</div></div>
+</section>
+
+<section id="roster">
+  <div class="section-label">HERO ROSTER — FROM DATA</div>
+  <h3>Released &nbsp;<span class="count">38</span></h3>
+  <div class="chip-grid"><div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Infernus</span><span class="chip-id">#1</span><span class="chip-stage">WIP</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Gigawatt <span class="unknown-badge">?</span></span><span class="chip-id">#2</span><span class="chip-stage">STAGING</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Hornet <span class="unknown-badge">?</span></span><span class="chip-id">#3</span><span class="chip-stage">STAGING</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Lady Geist</span><span class="chip-id">#4</span><span class="chip-stage">WIP</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Abrams</span><span class="chip-id">#6</span><span class="chip-stage">WIP</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Wraith</span><span class="chip-id">#7</span><span class="chip-stage">WIP</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">McGinnis</span><span class="chip-id">#8</span><span class="chip-stage">WIP</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Paradox</span><span class="chip-id">#10</span><span class="chip-stage">STAGING</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Dynamo</span><span class="chip-id">#11</span><span class="chip-stage">WIP</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Kelvin</span><span class="chip-id">#12</span><span class="chip-stage">STAGING</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Haze</span><span class="chip-id">#13</span><span class="chip-stage">STAGING</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Astro <span class="unknown-badge">?</span></span><span class="chip-id">#14</span><span class="chip-stage">STAGING</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Bebop</span><span class="chip-id">#15</span><span class="chip-stage">STAGING</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Seven</span><span class="chip-id">#16</span><span class="chip-stage">STAGING</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Grey Talon</span><span class="chip-id">#17</span><span class="chip-stage">STAGING</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Mo & Krill</span><span class="chip-id">#18</span><span class="chip-stage">STAGING</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Shiv</span><span class="chip-id">#19</span><span class="chip-stage">STAGING</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Ivy</span><span class="chip-id">#20</span><span class="chip-stage">WIP</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Warden</span><span class="chip-id">#25</span><span class="chip-stage">STAGING</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Yamato</span><span class="chip-id">#27</span><span class="chip-stage">STAGING</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Lash</span><span class="chip-id">#31</span><span class="chip-stage">WIP</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Viscous</span><span class="chip-id">#35</span><span class="chip-stage">STAGING</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Pocket</span><span class="chip-id">#50</span><span class="chip-stage">WIP</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Mirage</span><span class="chip-id">#52</span><span class="chip-stage">STAGING</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Vindicta</span><span class="chip-id">#58</span><span class="chip-stage">STAGING</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Magician <span class="unknown-badge">?</span></span><span class="chip-id">#60</span><span class="chip-stage">STAGING</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Calico</span><span class="chip-id">#63</span><span class="chip-stage">WIP</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Drifter</span><span class="chip-id">#64</span><span class="chip-stage">WIP</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Priest</span><span class="chip-id">#65</span><span class="chip-stage">WIP</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Frank</span><span class="chip-id">#66</span><span class="chip-stage">WIP</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Bookworm</span><span class="chip-id">#67</span><span class="chip-stage">WIP</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Holliday</span><span class="chip-id">#69</span><span class="chip-stage">WIP</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Punkgoat</span><span class="chip-id">#72</span><span class="chip-stage">WIP</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Necro</span><span class="chip-id">#76</span><span class="chip-stage">WIP</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Fencer</span><span class="chip-id">#77</span><span class="chip-stage">WIP</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Familiar</span><span class="chip-id">#79</span><span class="chip-stage">WIP</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Wrecker</span><span class="chip-id">#80</span><span class="chip-stage">WIP</span></div>
+<div class="hero-chip" style="border-color:#2a9d8f"><span class="chip-name">Sinclair</span><span class="chip-id">#81</span><span class="chip-stage">WIP</span></div></div>
+
+  <h3 style="color:#e8c43a">In Development &nbsp;<span class="count">9</span>
+    &nbsp;<span class="note">found in data, not yet playable</span></h3>
+  <div class="chip-grid"><div class="hero-chip" style="border-color:#e8c43a"><span class="chip-name">Boho <span class="unknown-badge">?</span></span><span class="chip-id">#68</span><span class="chip-stage">WIP</span></div>
+<div class="hero-chip" style="border-color:#e8c43a"><span class="chip-name">Skyrunner <span class="unknown-badge">?</span></span><span class="chip-id">#70</span><span class="chip-stage">WIP</span></div>
+<div class="hero-chip" style="border-color:#e8c43a"><span class="chip-name">Swan <span class="unknown-badge">?</span></span><span class="chip-id">#71</span><span class="chip-stage">STAGING</span></div>
+<div class="hero-chip" style="border-color:#e8c43a"><span class="chip-name">Druid <span class="unknown-badge">?</span></span><span class="chip-id">#73</span><span class="chip-stage">WIP</span></div>
+<div class="hero-chip" style="border-color:#e8c43a"><span class="chip-name">GraffitiGirl <span class="unknown-badge">?</span></span><span class="chip-id">#74</span><span class="chip-stage">WIP</span></div>
+<div class="hero-chip" style="border-color:#e8c43a"><span class="chip-name">Fortuna <span class="unknown-badge">?</span></span><span class="chip-id">#75</span><span class="chip-stage">WIP</span></div>
+<div class="hero-chip" style="border-color:#e8c43a"><span class="chip-name">Airheart <span class="unknown-badge">?</span></span><span class="chip-id">#78</span><span class="chip-stage">STAGING</span></div>
+<div class="hero-chip" style="border-color:#e8c43a"><span class="chip-name">Opera <span class="unknown-badge">?</span></span><span class="chip-id">#82</span><span class="chip-stage">STAGING</span></div>
+<div class="hero-chip" style="border-color:#e8c43a"><span class="chip-name">nano_v2 <span class="unknown-badge">?</span></span><span class="chip-id">#83</span><span class="chip-stage">STAGING</span></div></div>
+
+  <h3 style="color:#555">Retired / Reworked &nbsp;<span class="count">13</span></h3>
+  <div class="chip-grid"><div class="hero-chip" style="border-color:#555"><span class="chip-name">chrono <span class="unknown-badge">?</span></span><span class="chip-id">#38</span><span class="chip-stage">STAGING</span></div>
+<div class="hero-chip" style="border-color:#555"><span class="chip-name">gen_man <span class="unknown-badge">?</span></span><span class="chip-id">#39</span><span class="chip-stage">STAGING</span></div>
+<div class="hero-chip" style="border-color:#555"><span class="chip-name">gen_man <span class="unknown-badge">?</span></span><span class="chip-id">#47</span><span class="chip-stage">STAGING</span></div>
+<div class="hero-chip" style="border-color:#555"><span class="chip-name">wrecker <span class="unknown-badge">?</span></span><span class="chip-id">#48</span><span class="chip-stage">STAGING</span></div>
+<div class="hero-chip" style="border-color:#555"><span class="chip-name">gen_man <span class="unknown-badge">?</span></span><span class="chip-id">#49</span><span class="chip-stage">STAGING</span></div>
+<div class="hero-chip" style="border-color:#555"><span class="chip-name">gen_man <span class="unknown-badge">?</span></span><span class="chip-id">#51</span><span class="chip-stage">STAGING</span></div>
+<div class="hero-chip" style="border-color:#555"><span class="chip-name">gen_man <span class="unknown-badge">?</span></span><span class="chip-id">#53</span><span class="chip-stage">STAGING</span></div>
+<div class="hero-chip" style="border-color:#555"><span class="chip-name">gen_man <span class="unknown-badge">?</span></span><span class="chip-id">#54</span><span class="chip-stage">STAGING</span></div>
+<div class="hero-chip" style="border-color:#555"><span class="chip-name">gen_man <span class="unknown-badge">?</span></span><span class="chip-id">#56</span><span class="chip-stage">STAGING</span></div>
+<div class="hero-chip" style="border-color:#555"><span class="chip-name">gen_man <span class="unknown-badge">?</span></span><span class="chip-id">#57</span><span class="chip-stage">STAGING</span></div>
+<div class="hero-chip" style="border-color:#555"><span class="chip-name">gen_man <span class="unknown-badge">?</span></span><span class="chip-id">#59</span><span class="chip-stage">STAGING</span></div>
+<div class="hero-chip" style="border-color:#555"><span class="chip-name">gen_man <span class="unknown-badge">?</span></span><span class="chip-id">#61</span><span class="chip-stage">STAGING</span></div>
+<div class="hero-chip" style="border-color:#555"><span class="chip-name">operative <span class="unknown-badge">?</span></span><span class="chip-id">#62</span><span class="chip-stage">STAGING</span></div></div>
+
+  <div class="deleted-note">
+    + <b>20 hero IDs</b> were fully deleted from the data — no trace beyond the gap in the ID sequence.
+    The cluster at IDs 22–45 looks like a single large design purge.
+  </div>
+</section>
+
+<section id="stat-web">
+  <div class="section-label">STAT GRAPH — 4,884 EDGES ACROSS ALL HEROES</div>
+  <p class="explainer">
+    Every row below is a stat type that abilities and items in the game can modify.
+    The number is how many ability/item properties declare they affect that stat.
+    This is the skeleton of the game's balance system — visible in the data.
+  </p>
+  <table class="mv-table">
+    <thead><tr><th>Stat modified</th><th>Frequency</th><th>Edges</th></tr></thead>
+    <tbody><tr><td class="mv-name">Fire Rate</td><td><div class="bar" style="width:240px;background:#f5a623"></div></td><td class="mv-count">140</td></tr><tr><td class="mv-name">Movement Speed Slow Percent</td><td><div class="bar" style="width:195px;background:#8a9bb0"></div></td><td class="mv-count">114</td></tr><tr><td class="mv-name">Movement Speed Max</td><td><div class="bar" style="width:111px;background:#8a9bb0"></div></td><td class="mv-count">65</td></tr><tr><td class="mv-name">Health Max</td><td><div class="bar" style="width:111px;background:#4fc24f"></div></td><td class="mv-count">65</td></tr><tr><td class="mv-name">Tech Power</td><td><div class="bar" style="width:80px;background:#9b6dff"></div></td><td class="mv-count">47</td></tr><tr><td class="mv-name">Baseattack Damage Percent</td><td><div class="bar" style="width:78px;background:#8a9bb0"></div></td><td class="mv-count">46</td></tr><tr><td class="mv-name">Tech Armor Damage Resist</td><td><div class="bar" style="width:73px;background:#9b6dff"></div></td><td class="mv-count">43</td></tr><tr><td class="mv-name">Bullet Armor Damage Resist</td><td><div class="bar" style="width:68px;background:#f5a623"></div></td><td class="mv-count">40</td></tr><tr><td class="mv-name">Fire Rate Slow</td><td><div class="bar" style="width:53px;background:#f5a623"></div></td><td class="mv-count">31</td></tr><tr><td class="mv-name">Bullet Armor Damage Resist Reduction</td><td><div class="bar" style="width:44px;background:#f5a623"></div></td><td class="mv-count">26</td></tr><tr><td class="mv-name">Barrier Health</td><td><div class="bar" style="width:44px;background:#4fc24f"></div></td><td class="mv-count">26</td></tr><tr><td class="mv-name">Tech Armor Damage Resist Reduction</td><td><div class="bar" style="width:42px;background:#9b6dff"></div></td><td class="mv-count">25</td></tr><tr><td class="mv-name">Sprint Speed Bonus</td><td><div class="bar" style="width:41px;background:#8a9bb0"></div></td><td class="mv-count">24</td></tr><tr><td class="mv-name">Movement Ground Dash Reduction Percent</td><td><div class="bar" style="width:37px;background:#8a9bb0"></div></td><td class="mv-count">22</td></tr><tr><td class="mv-name">Out Of Combat Health Regen</td><td><div class="bar" style="width:37px;background:#4fc24f"></div></td><td class="mv-count">22</td></tr><tr><td class="mv-name">Health Regen Per Second</td><td><div class="bar" style="width:34px;background:#4fc24f"></div></td><td class="mv-count">20</td></tr><tr><td class="mv-name">Heal Amp Regen Percent</td><td><div class="bar" style="width:32px;background:#4fc24f"></div></td><td class="mv-count">19</td></tr><tr><td class="mv-name">Bullet Lifesteal</td><td><div class="bar" style="width:30px;background:#f5a623"></div></td><td class="mv-count">18</td></tr><tr><td class="mv-name">Heal Amp Receive Percent</td><td><div class="bar" style="width:29px;background:#8a9bb0"></div></td><td class="mv-count">17</td></tr><tr><td class="mv-name">Tech Range Percent</td><td><div class="bar" style="width:29px;background:#9b6dff"></div></td><td class="mv-count">17</td></tr></tbody>
+  </table>
+</section>
+</main>
+
+<footer>
+  Source: Valve game data (heroes.vdata, abilities.vdata) &nbsp;|&nbsp;
+  Nydus Ontology &mdash; local build &nbsp;|&nbsp;
+  <code>nydus:hero/Abrams</code> verified against live game
+</footer>
+
+</body>
+</html>

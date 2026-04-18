@@ -1,0 +1,412 @@
+@base            <http://nydus.gg/source/> .
+@prefix nydus:   <http://nydus.gg/ontology#> .
+@prefix hero:    <http://nydus.gg/ontology#hero/> .
+@prefix ability: <http://nydus.gg/ontology#ability/> .
+@prefix stat:    <http://nydus.gg/ontology#stat/> .
+@prefix mv:      <http://nydus.gg/ontology#mv/> .
+@prefix slot:    <http://nydus.gg/ontology#slot/> .
+@prefix sf:      <http://nydus.gg/ontology#sf/> .
+@prefix cat:     <http://nydus.gg/ontology#cat/> .
+@prefix stage:   <http://nydus.gg/ontology#stage/> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix skos:    <http://www.w3.org/2004/02/skos/core#> .
+@prefix schema:  <http://schema.org/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+
+# ============================================================
+# Property Categories  (cross-ability comparison anchors)
+# ============================================================
+
+cat:Charges  a nydus:PropertyCategory ; rdfs:label "Charges"@en .
+cat:Cooldown  a nydus:PropertyCategory ; rdfs:label "Cooldown"@en .
+cat:Damage  a nydus:PropertyCategory ; rdfs:label "Damage"@en .
+cat:Duration  a nydus:PropertyCategory ; rdfs:label "Duration"@en .
+cat:Healing  a nydus:PropertyCategory ; rdfs:label "Healing"@en .
+cat:Range  a nydus:PropertyCategory ; rdfs:label "Range"@en .
+cat:Speed  a nydus:PropertyCategory ; rdfs:label "Speed"@en .
+cat:Stack  a nydus:PropertyCategory ; rdfs:label "Stack"@en .
+cat:Stat  a nydus:PropertyCategory ; rdfs:label "Stat Modifier"@en .
+cat:Unknown  a nydus:PropertyCategory ; rdfs:label "Unknown"@en .
+cat:Weapon  a nydus:PropertyCategory ; rdfs:label "Weapon"@en .
+
+# ============================================================
+# Hero: Sinclair  (hero_magician  ID=60)
+# ============================================================
+
+hero:Magician
+    a nydus:Hero ;
+    rdfs:label "Sinclair"@en ;
+    skos:altLabel "Sinclair"@en ;
+    nydus:heroTag "Trickster" ;
+    nydus:heroTag "Copycat" ;
+    nydus:heroTag "Versatile" ;
+    schema:identifier "60"^^xsd:integer ;
+    nydus:internalKey "hero_magician" ;
+    nydus:developerStage stage:WIP ;
+    nydus:isPlayerSelectable true ;
+    nydus:isDisabled false ;
+    nydus:complexity "4"^^xsd:integer ;
+    nydus:heroType "ECitadelHeroType_Mystic" ;
+    nydus:abilityResourceType "EResourceType_None" ;
+    nydus:hasAbilityInSlot [ rdfs:label "Climb Rope"@en ; nydus:slot slot:AbilityClimbRope ; nydus:ability ability:ClimbRope ] ;
+    nydus:hasAbilityInSlot [ rdfs:label "Innate 1: Dash"@en ; nydus:slot slot:AbilityInnate1 ; nydus:ability ability:Dash ] ;
+    nydus:hasAbilityInSlot [ rdfs:label "Innate 2: Sprint"@en ; nydus:slot slot:AbilityInnate2 ; nydus:ability ability:Sprint ] ;
+    nydus:hasAbilityInSlot [ rdfs:label "Innate 3: Parry"@en ; nydus:slot slot:AbilityInnate3 ; nydus:ability ability:MeleeParry ] ;
+    nydus:hasAbilityInSlot [ rdfs:label "Jump"@en ; nydus:slot slot:AbilityJump ; nydus:ability ability:Jump ] ;
+    nydus:hasAbilityInSlot [ rdfs:label "Mantle"@en ; nydus:slot slot:AbilityMantle ; nydus:ability ability:Mantle ] ;
+    nydus:hasAbilityInSlot [ rdfs:label "Slide"@en ; nydus:slot slot:AbilitySlide ; nydus:ability ability:Slide ] ;
+    nydus:hasAbilityInSlot [ rdfs:label "Zip Line: Hyperline"@en ; nydus:slot slot:AbilityZipLine ; nydus:ability ability:ZipLine ] ;
+    nydus:hasAbilityInSlot [ rdfs:label "Zip Line Boost: Zipline Boosted"@en ; nydus:slot slot:AbilityZipLineBoost ; nydus:ability ability:ZiplineBoost ] ;
+    nydus:hasAbilityInSlot [ rdfs:label "Ability 1: Vexing Bolt"@en ; nydus:slot slot:Signature1 ; nydus:ability ability:MagicianMagicbolt ] ;
+    nydus:hasAbilityInSlot [ rdfs:label "Ability 2: Magician Cloneturret"@en ; nydus:slot slot:Signature2 ; nydus:ability ability:MagicianCloneturret ] ;
+    nydus:hasAbilityInSlot [ rdfs:label "Ability 3: Magician Animalhexarea"@en ; nydus:slot slot:Signature3 ; nydus:ability ability:MagicianAnimalhexarea ] ;
+    nydus:hasAbilityInSlot [ rdfs:label "Ultimate: Magician Copyult"@en ; nydus:slot slot:Signature4 ; nydus:ability ability:MagicianCopyult ] ;
+    nydus:hasAbilityInSlot [ rdfs:label "Melee"@en ; nydus:slot slot:WeaponMelee ; nydus:ability ability:MeleeMagician ] ;
+    nydus:hasAbilityInSlot [ rdfs:label "Primary Weapon: Magician Set"@en ; nydus:slot slot:WeaponPrimary ; nydus:ability ability:WeaponMagicianSet ] ;
+    nydus:startingMaxMoveSpeed "7.2"^^xsd:decimal ;
+    nydus:startingSprintSpeed "1.6"^^xsd:decimal ;
+    nydus:startingMaxHealth "740"^^xsd:decimal ;
+    nydus:startingBaseHealthRegen "2"^^xsd:decimal ;
+    nydus:startingStamina "3"^^xsd:decimal ;
+    nydus:startingStaminaRegenPerSecond "0.222222"^^xsd:decimal ;
+    nydus:startingReloadSpeed "1"^^xsd:decimal ;
+    nydus:startingLightMeleeDamage "50"^^xsd:decimal ;
+    nydus:startingHeavyMeleeDamage "116"^^xsd:decimal ;
+    nydus:startingTechDuration "1"^^xsd:decimal ;
+    nydus:startingTechRange "1"^^xsd:decimal ;
+    prov:wasDerivedFrom <scripts/heroes.vdata> .
+
+# Ability: Dash  (citadel_ability_dash)
+ability:Dash
+    a nydus:Ability ;
+    rdfs:label "Dash"@en ;
+    nydus:internalKey "citadel_ability_dash" ;
+    nydus:abilityType "EAbilityType_Innate" ;
+    nydus:activationType "CITADEL_ABILITY_ACTIVATION_INSTANT_CAST" ;
+    nydus:hasProperty [
+        a nydus:AbilityProperty ;
+        rdfs:label "Duration"@en ;
+        nydus:internalName "AbilityDuration" ;
+        nydus:baseValue "0.6"^^xsd:decimal ;
+        nydus:primaryCategory cat:Duration ;
+        nydus:categoryDeterminism "high" ;
+        nydus:scalesStat stat:TechDuration ;
+        nydus:scaleFunction "scale_function_single_stat" ;
+    ] ;
+    prov:wasDerivedFrom <scripts/abilities.vdata> .
+
+# Ability: Sprint  (citadel_ability_sprint)
+ability:Sprint
+    a nydus:Ability ;
+    rdfs:label "Sprint"@en ;
+    nydus:internalKey "citadel_ability_sprint" ;
+    nydus:abilityType "EAbilityType_Innate" ;
+    nydus:activationType "CITADEL_ABILITY_ACTIVATION_PASSIVE" ;
+    prov:wasDerivedFrom <scripts/abilities.vdata> .
+
+# Ability: Parry  (citadel_ability_melee_parry)
+ability:MeleeParry
+    a nydus:Ability ;
+    rdfs:label "Parry"@en ;
+    nydus:internalKey "citadel_ability_melee_parry" ;
+    nydus:abilityType "EAbilityType_Innate" ;
+    nydus:activationType "CITADEL_ABILITY_ACTIVATION_INSTANT_CAST" ;
+    nydus:hasProperty [
+        a nydus:AbilityProperty ;
+        rdfs:label "Cooldown"@en ;
+        nydus:internalName "AbilityCooldown" ;
+        nydus:baseValue "4.5"^^xsd:decimal ;
+        nydus:primaryCategory cat:Cooldown ;
+        nydus:categoryDeterminism "high" ;
+        nydus:scalesStat stat:ParryCooldown ;
+        nydus:scaleFactor "-1"^^xsd:decimal ;
+        nydus:scaleFunction "scale_function_single_stat" ;
+    ] ;
+    prov:wasDerivedFrom <scripts/abilities.vdata> .
+
+# Ability: Vexing Bolt  (ability_magician_magicbolt)
+ability:MagicianMagicbolt
+    a nydus:Ability ;
+    rdfs:label "Vexing Bolt"@en ;
+    nydus:internalKey "ability_magician_magicbolt" ;
+    nydus:abilityType "EAbilityType_Signature" ;
+    nydus:activationType "CITADEL_ABILITY_ACTIVATION_INSTANT_CAST" ;
+    nydus:hasProperty [
+        a nydus:AbilityProperty ;
+        rdfs:label "Cooldown"@en ;
+        nydus:internalName "AbilityCooldown" ;
+        nydus:baseValue "24"^^xsd:decimal ;
+        nydus:primaryCategory cat:Cooldown ;
+        nydus:categoryDeterminism "high" ;
+        nydus:scalesStat stat:TechCooldown ;
+        nydus:scaleFunction "scale_function_single_stat" ;
+    ] ;
+    nydus:hasProperty [
+        a nydus:AbilityProperty ;
+        rdfs:label "Cast Range"@en ;
+        nydus:internalName "AbilityCastRange" ;
+        nydus:baseValue "500m" ;
+        nydus:primaryCategory cat:Range ;
+        nydus:categoryDeterminism "high" ;
+        nydus:scalesStat stat:TechRange ;
+        nydus:scaleFunction "scale_function_single_stat" ;
+    ] ;
+    nydus:hasProperty [
+        a nydus:AbilityProperty ;
+        rdfs:label "Charges"@en ;
+        nydus:internalName "AbilityCharges" ;
+        nydus:baseValue "1"^^xsd:decimal ;
+        nydus:primaryCategory cat:Charges ;
+        nydus:categoryDeterminism "high" ;
+        nydus:scaleFunction "scale_function_ability_charges" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Fire Rate"@en ;
+        nydus:upgradeLevel "1"^^xsd:integer ;
+        nydus:modifiesProperty "FireRateSlow" ;
+        nydus:bonusValue "25" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Debuff Duration"@en ;
+        nydus:upgradeLevel "1"^^xsd:integer ;
+        nydus:modifiesProperty "DebuffDuration" ;
+        nydus:bonusValue "5" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Cooldown"@en ;
+        nydus:upgradeLevel "2"^^xsd:integer ;
+        nydus:modifiesProperty "AbilityCooldown" ;
+        nydus:bonusValue "-13" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Max Damage"@en ;
+        nydus:upgradeLevel "3"^^xsd:integer ;
+        nydus:modifiesProperty "MaxDamage" ;
+        nydus:bonusValue "126.0" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Clone Damage Percentage"@en ;
+        nydus:upgradeLevel "3"^^xsd:integer ;
+        nydus:modifiesProperty "CloneDamagePercentage" ;
+        nydus:bonusValue "50.0" ;
+    ] ;
+    prov:wasDerivedFrom <scripts/abilities.vdata> .
+
+# Ability: Magician Cloneturret  (ability_magician_cloneturret)
+ability:MagicianCloneturret
+    a nydus:Ability ;
+    rdfs:label "Magician Cloneturret"@en ;
+    nydus:internalKey "ability_magician_cloneturret" ;
+    nydus:abilityType "EAbilityType_Signature" ;
+    nydus:activationType "CITADEL_ABILITY_ACTIVATION_PRESS" ;
+    nydus:hasProperty [
+        a nydus:AbilityProperty ;
+        rdfs:label "Cooldown"@en ;
+        nydus:internalName "AbilityCooldown" ;
+        nydus:baseValue "40"^^xsd:decimal ;
+        nydus:primaryCategory cat:Cooldown ;
+        nydus:categoryDeterminism "high" ;
+        nydus:scalesStat stat:TechCooldown ;
+        nydus:scaleFunction "scale_function_single_stat" ;
+    ] ;
+    nydus:hasProperty [
+        a nydus:AbilityProperty ;
+        rdfs:label "Duration"@en ;
+        nydus:internalName "AbilityDuration" ;
+        nydus:baseValue "6"^^xsd:decimal ;
+        nydus:primaryCategory cat:Duration ;
+        nydus:categoryDeterminism "high" ;
+        nydus:scalesStat stat:TechDuration ;
+        nydus:scaleFunction "scale_function_single_stat" ;
+    ] ;
+    nydus:hasProperty [
+        a nydus:AbilityProperty ;
+        rdfs:label "Cast Range"@en ;
+        nydus:internalName "AbilityCastRange" ;
+        nydus:baseValue "15m" ;
+        nydus:primaryCategory cat:Range ;
+        nydus:categoryDeterminism "high" ;
+        nydus:scalesStat stat:TechRange ;
+        nydus:scaleFunction "scale_function_single_stat" ;
+    ] ;
+    nydus:hasProperty [
+        a nydus:AbilityProperty ;
+        rdfs:label "Damage"@en ;
+        nydus:internalName "Damage" ;
+        nydus:baseValue "15"^^xsd:decimal ;
+        nydus:primaryCategory cat:Damage ;
+        nydus:categoryDeterminism "high" ;
+        nydus:scaleFactor "0.36"^^xsd:decimal ;
+        nydus:scaleFunction "scale_function_tech_damage" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Cooldown"@en ;
+        nydus:upgradeLevel "1"^^xsd:integer ;
+        nydus:modifiesProperty "AbilityCooldown" ;
+        nydus:bonusValue "-10" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Duration"@en ;
+        nydus:upgradeLevel "2"^^xsd:integer ;
+        nydus:modifiesProperty "AbilityDuration" ;
+        nydus:bonusValue "7" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Cast Range"@en ;
+        nydus:upgradeLevel "2"^^xsd:integer ;
+        nydus:modifiesProperty "AbilityCastRange" ;
+        nydus:bonusValue "5m" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Leash Radius"@en ;
+        nydus:upgradeLevel "2"^^xsd:integer ;
+        nydus:modifiesProperty "LeashRadius" ;
+        nydus:bonusValue "5m" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Fire Rate"@en ;
+        nydus:upgradeLevel "3"^^xsd:integer ;
+        nydus:modifiesProperty "BonusFireRate" ;
+        nydus:bonusValue "60" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Damage"@en ;
+        nydus:upgradeLevel "3"^^xsd:integer ;
+        nydus:modifiesProperty "Damage" ;
+        nydus:bonusValue "12.599999" ;
+    ] ;
+    prov:wasDerivedFrom <scripts/abilities.vdata> .
+
+# Ability: Magician Animalhexarea  (ability_magician_animalhexarea)
+ability:MagicianAnimalhexarea
+    a nydus:Ability ;
+    rdfs:label "Magician Animalhexarea"@en ;
+    nydus:internalKey "ability_magician_animalhexarea" ;
+    nydus:abilityType "EAbilityType_Signature" ;
+    nydus:activationType "CITADEL_ABILITY_ACTIVATION_PRESS" ;
+    nydus:hasProperty [
+        a nydus:AbilityProperty ;
+        rdfs:label "Cooldown"@en ;
+        nydus:internalName "AbilityCooldown" ;
+        nydus:baseValue "26"^^xsd:decimal ;
+        nydus:primaryCategory cat:Cooldown ;
+        nydus:categoryDeterminism "high" ;
+        nydus:scalesStat stat:TechCooldown ;
+        nydus:scaleFunction "scale_function_single_stat" ;
+    ] ;
+    nydus:hasProperty [
+        a nydus:AbilityProperty ;
+        rdfs:label "Cast Range"@en ;
+        nydus:internalName "AbilityCastRange" ;
+        nydus:baseValue "24m" ;
+        nydus:primaryCategory cat:Range ;
+        nydus:categoryDeterminism "high" ;
+        nydus:scalesStat stat:TechRange ;
+        nydus:scaleFunction "scale_function_single_stat" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Cooldown"@en ;
+        nydus:upgradeLevel "1"^^xsd:integer ;
+        nydus:modifiesProperty "AbilityCooldown" ;
+        nydus:bonusValue "-10" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Hex Duration"@en ;
+        nydus:upgradeLevel "2"^^xsd:integer ;
+        nydus:modifiesProperty "HexDuration" ;
+        nydus:bonusValue "1" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Radius"@en ;
+        nydus:upgradeLevel "3"^^xsd:integer ;
+        nydus:modifiesProperty "Radius" ;
+        nydus:bonusValue "3m" ;
+    ] ;
+    nydus:hasUpgrade [
+        a nydus:AbilityUpgrade ;
+        rdfs:label "Damage Amp Percentage"@en ;
+        nydus:upgradeLevel "3"^^xsd:integer ;
+        nydus:modifiesProperty "DamageAmpPercentage" ;
+        nydus:bonusValue "7" ;
+    ] ;
+    prov:wasDerivedFrom <scripts/abilities.vdata> .
+
+# Ability: Magician Copyult  (ability_magician_copyult)
+ability:MagicianCopyult
+    a nydus:Ability ;
+    rdfs:label "Magician Copyult"@en ;
+    nydus:internalKey "ability_magician_copyult" ;
+    nydus:abilityType "EAbilityType_Ultimate" ;
+    nydus:activationType "CITADEL_ABILITY_ACTIVATION_PRESS" ;
+    nydus:hasProperty [
+        a nydus:AbilityProperty ;
+        rdfs:label "Cooldown"@en ;
+        nydus:internalName "AbilityCooldown" ;
+        nydus:baseValue "85"^^xsd:decimal ;
+        nydus:primaryCategory cat:Cooldown ;
+        nydus:categoryDeterminism "high" ;
+        nydus:scalesStat stat:TechCooldown ;
+        nydus:scaleFunction "scale_function_single_stat" ;
+    ] ;
+    nydus:hasProperty [
+        a nydus:AbilityProperty ;
+        rdfs:label "Cast Range"@en ;
+        nydus:internalName "AbilityCastRange" ;
+        nydus:baseValue "20m" ;
+        nydus:primaryCategory cat:Range ;
+        nydus:categoryDeterminism "high" ;
+        nydus:scalesStat stat:TechRange ;
+        nydus:scaleFunction "scale_function_single_stat" ;
+    ] ;
+    prov:wasDerivedFrom <scripts/abilities.vdata> .
+
+# ============================================================
+# Vocabulary labels  (stat / slot / scale-function / modifier / shared abilities)
+# ============================================================
+
+ability:ClimbRope  rdfs:label "Climb Rope"@en .
+ability:Jump  rdfs:label "Jump"@en .
+ability:Mantle  rdfs:label "Mantle"@en .
+ability:MeleeMagician  rdfs:label "Melee"@en .
+ability:Slide  rdfs:label "Slide"@en .
+ability:WeaponMagicianSet  rdfs:label "Magician Set"@en .
+ability:ZipLine  rdfs:label "Hyperline"@en .
+ability:ZiplineBoost  rdfs:label "Zipline Boosted"@en .
+stat:ParryCooldown  a nydus:Stat ; rdfs:label "Parry Cooldown"@en .
+stat:TechCooldown  a nydus:Stat ; rdfs:label "Ability Cooldown"@en .
+stat:TechDuration  a nydus:Stat ; rdfs:label "Ability Duration"@en .
+stat:TechRange  a nydus:Stat ; rdfs:label "Ability Range"@en .
+slot:AbilityClimbRope  a nydus:Slot ; rdfs:label "Climb Rope"@en .
+slot:AbilityInnate1  a nydus:Slot ; rdfs:label "Innate 1"@en .
+slot:AbilityInnate2  a nydus:Slot ; rdfs:label "Innate 2"@en .
+slot:AbilityInnate3  a nydus:Slot ; rdfs:label "Innate 3"@en .
+slot:AbilityJump  a nydus:Slot ; rdfs:label "Jump"@en .
+slot:AbilityMantle  a nydus:Slot ; rdfs:label "Mantle"@en .
+slot:AbilitySlide  a nydus:Slot ; rdfs:label "Slide"@en .
+slot:AbilityZipLine  a nydus:Slot ; rdfs:label "Zip Line"@en .
+slot:AbilityZipLineBoost  a nydus:Slot ; rdfs:label "Zip Line Boost"@en .
+slot:Signature1  a nydus:Slot ; rdfs:label "Ability 1"@en .
+slot:Signature2  a nydus:Slot ; rdfs:label "Ability 2"@en .
+slot:Signature3  a nydus:Slot ; rdfs:label "Ability 3"@en .
+slot:Signature4  a nydus:Slot ; rdfs:label "Ultimate"@en .
+slot:WeaponMelee  a nydus:Slot ; rdfs:label "Melee"@en .
+slot:WeaponPrimary  a nydus:Slot ; rdfs:label "Primary Weapon"@en .
+sf:AbilityCharges  a nydus:ScaleFunction ; rdfs:label "Scales with Ability Charges"@en .
+sf:SingleStat  a nydus:ScaleFunction ; rdfs:label "Scales with a Single Stat"@en .
+sf:TechDamage  a nydus:ScaleFunction ; rdfs:label "Scales with Spirit Power"@en .

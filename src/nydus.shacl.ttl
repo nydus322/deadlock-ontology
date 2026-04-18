@@ -1,0 +1,229 @@
+# DID_SWAP_TARGET: replace http://nydus.gg/ontology# with did:key:z6Mk...#ward/ on publish
+@prefix nydus:   <http://nydus.gg/ontology#> .
+@prefix cat:     <http://nydus.gg/ontology#cat/> .
+@prefix sh:      <http://www.w3.org/ns/shacl#> .
+@prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd:     <http://www.w3.org/2001/XMLSchema#> .
+@prefix schema:  <http://schema.org/> .
+@prefix prov:    <http://www.w3.org/ns/prov#> .
+
+# ============================================================
+# nydus:PropertyCategoryShape
+#
+# Shared semantic nodes that anchor cross-ability comparison.
+# Every AbilityProperty links to exactly one primary category.
+# ============================================================
+nydus:PropertyCategoryShape
+    a sh:NodeShape ;
+    sh:targetClass nydus:PropertyCategory ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:minCount 1 ;
+        sh:maxCount 1
+    ] .
+
+# ============================================================
+# nydus:AbilityPropertyShape
+#
+# One instance per mechanical property on an ability.
+# Blank node owned by nydus:Ability via nydus:hasProperty.
+# primaryCategory is the cross-ability comparison anchor.
+# Low-determinism mappings carry secondaryCategory + categoryNote.
+# ============================================================
+nydus:AbilityPropertyShape
+    a sh:NodeShape ;
+    sh:targetClass nydus:AbilityProperty ;
+    sh:property [
+        sh:path nydus:internalName ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string
+    ] ;
+    sh:property [
+        sh:path nydus:baseValue ;
+        sh:minCount 1 ;
+        sh:maxCount 1
+        # No datatype constraint: numeric values are xsd:decimal,
+        # unit-suffixed values (e.g. "18.75m") are xsd:string.
+    ] ;
+    sh:property [
+        sh:path nydus:primaryCategory ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:class nydus:PropertyCategory
+    ] ;
+    sh:property [
+        sh:path nydus:secondaryCategory ;
+        sh:maxCount 1 ;
+        sh:class nydus:PropertyCategory
+    ] ;
+    sh:property [
+        sh:path nydus:categoryDeterminism ;
+        sh:maxCount 1 ;
+        sh:in ( "high" "low" )
+    ] ;
+    sh:property [
+        sh:path nydus:categoryNote ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string
+    ] ;
+    sh:property [
+        sh:path nydus:scalesStat
+        # No maxCount: scale_function_multi_stats scales a single property
+        # against multiple stats (e.g. TechPower + TechDuration).
+    ] ;
+    sh:property [
+        sh:path nydus:scaleFactor ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:decimal
+    ] ;
+    sh:property [
+        sh:path nydus:scaleFunction ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string
+    ] ;
+    sh:property [
+        sh:path nydus:providesModifierType ;
+        sh:maxCount 1
+    ] .
+
+# ============================================================
+# nydus:AbilityUpgradeShape
+#
+# One instance per upgrade bonus at a given tier (1–3).
+# Multiple upgrades at the same level are separate nodes.
+# ============================================================
+nydus:AbilityUpgradeShape
+    a sh:NodeShape ;
+    sh:targetClass nydus:AbilityUpgrade ;
+    sh:property [
+        sh:path nydus:upgradeLevel ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer ;
+        sh:minInclusive 1 ;
+        sh:maxInclusive 3
+    ] ;
+    sh:property [
+        sh:path nydus:modifiesProperty ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string
+    ] ;
+    sh:property [
+        sh:path nydus:bonusValue ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string
+    ] .
+
+# ============================================================
+# nydus:AbilityShape
+#
+# Covers all ability types: Signature, Ultimate, Innate, Weapon.
+# hasProperty links to AbilityProperty blank nodes.
+# hasUpgrade links to AbilityUpgrade blank nodes.
+# hasSubAbility links to child Ability IRIs (dependent abilities).
+# ============================================================
+nydus:AbilityShape
+    a sh:NodeShape ;
+    sh:targetClass nydus:Ability ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:minCount 1 ;
+        sh:maxCount 1
+    ] ;
+    sh:property [
+        sh:path nydus:internalKey ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string
+    ] ;
+    sh:property [
+        sh:path nydus:abilityType ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string
+    ] ;
+    sh:property [
+        sh:path nydus:activationType ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string
+    ] ;
+    sh:property [
+        sh:path nydus:hasProperty ;
+        sh:class nydus:AbilityProperty
+    ] ;
+    sh:property [
+        sh:path nydus:hasUpgrade ;
+        sh:class nydus:AbilityUpgrade
+    ] ;
+    sh:property [
+        sh:path nydus:hasSubAbility ;
+        sh:class nydus:Ability
+    ] ;
+    sh:property [
+        sh:path prov:wasDerivedFrom ;
+        sh:minCount 1
+    ] .
+
+# ============================================================
+# nydus:HeroShape
+#
+# One node per playable or pipeline hero.
+# hasAbilityInSlot blank nodes are not individually shaped here —
+# they are structural slot bindings, not first-class entities.
+# ============================================================
+nydus:HeroShape
+    a sh:NodeShape ;
+    sh:targetClass nydus:Hero ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:minCount 1 ;
+        sh:maxCount 1
+    ] ;
+    sh:property [
+        sh:path nydus:internalKey ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string
+    ] ;
+    sh:property [
+        sh:path schema:identifier ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:integer
+    ] ;
+    sh:property [
+        sh:path nydus:heroType ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:string
+        # Optional: some WIP heroes omit m_eHeroType in vdata.
+    ] ;
+    sh:property [
+        sh:path nydus:isPlayerSelectable ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean
+    ] ;
+    sh:property [
+        sh:path nydus:isDisabled ;
+        sh:minCount 1 ;
+        sh:maxCount 1 ;
+        sh:datatype xsd:boolean
+    ] ;
+    sh:property [
+        sh:path nydus:developerStage ;
+        sh:minCount 1 ;
+        sh:maxCount 1
+    ] ;
+    sh:property [
+        sh:path nydus:hasAbilityInSlot ;
+        sh:minCount 1
+    ] ;
+    sh:property [
+        sh:path prov:wasDerivedFrom ;
+        sh:minCount 1
+    ] .
