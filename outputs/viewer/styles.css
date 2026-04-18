@@ -630,22 +630,29 @@ body.view-card main {
   letter-spacing: 0.14em;
   color: var(--hero-accent);
   font-weight: 700;
-  margin-bottom: 3px;
+  margin-bottom: 4px;
 }
+.tier-stamp .tier-effect {
+  display: block;
+  line-height: 1.15;
+  margin-top: 3px;
+}
+.tier-stamp .tier-effect:first-of-type { margin-top: 0; }
 .tier-stamp .tier-value {
   color: var(--fg);
   font-family: "Fira Code", Menlo, Consolas, monospace;
   font-size: 11px;
   font-weight: 600;
+  display: block;
 }
 .tier-stamp .tier-prop {
   display: block;
   font-size: 9px;
   color: var(--fg-soft);
-  margin-top: 2px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
+  margin-top: 1px;
+  /* Allow wrap so long modifier names ("Healing Reduction") are legible */
+  white-space: normal;
+  word-break: break-word;
 }
 
 /* Primary-weapon card spans full row for visual differentiation */

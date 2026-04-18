@@ -355,18 +355,78 @@
     }
 
     if (k === "scaleFunction") {
+      if (Object.prototype.hasOwnProperty.call(SCALE_FUNCTION_PLAYER_NAMES, v)) {
+        return SCALE_FUNCTION_PLAYER_NAMES[v]; // may be null (suppress)
+      }
+      // Unknown scale function -> fall back to a clean split.
       return v.replace(/^scale_function_/, "")
               .split("_")
               .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
               .join(" ");
     }
     if (k === "modifiesProperty") {
+      if (MODIFIES_PROPERTY_ALIAS[v]) return MODIFIES_PROPERTY_ALIAS[v];
       // Preserve bare acronyms (DPS, HP); CamelCase split otherwise.
       if (/^[A-Z0-9]+$/.test(v) && v.length <= 5) return v;
       return v.replace(/([a-z0-9])([A-Z])/g, "$1 $2")
               .replace(/^./, (c) => c.toUpperCase());
     }
     return v;
+  }
+
+  // Scale-function -> player-facing stat name. Deadlock's tooltips say
+  // "Spirit Power", never "Tech Damage"; "Weapon Damage", never the raw enum.
+  // "Single Stat" is the default (the property scales with its own stat) and
+  // carries no information for a viewer, so we suppress that badge entirely.
+  const SCALE_FUNCTION_PLAYER_NAMES = {
+    scale_function_tech_damage:          "Spirit Power",
+    scale_function_tech_power:           "Spirit Power",
+    scale_function_tech_range:           "Spirit Range",
+    scale_function_tech_duration:        "Spirit Duration",
+    scale_function_tech_cooldown:        "Cooldown Reduction",
+    scale_function_weapon_damage:        "Weapon Damage",
+    scale_function_ability_weapon_damage:"Weapon Damage",
+    scale_function_ability_charges:      "Ability Charges",
+    scale_function_multi_stats:          "Multiple Stats",
+    scale_function_single_stat:          null, // suppress — default, uninformative
+  };
+
+  // ModifiesProperty (engine-internal CamelCase) -> player-facing label.
+  // Drops the "Ability" prefix so tier stamps read "Cooldown" instead of
+  // "Ability Cooldown", matching the card's own stat row and Deadlock's
+  // in-game copy.
+  const MODIFIES_PROPERTY_ALIAS = {
+    AbilityCooldown:              "Cooldown",
+    AbilityDuration:              "Duration",
+    AbilityCastRange:             "Cast Range",
+    AbilityCharges:               "Charges",
+    AbilityRadius:                "Radius",
+    AbilityCooldownBetweenCharge: "Recharge Time",
+    DPS:                          "DPS",
+    HP:                           "Health",
+  };
+
+  // Suffix applied to a bare numeric value to make it read as a real quantity.
+  // Deadlock's UI convention: seconds for times, meters for distances, % for
+  // percent-scaled bonuses. Detected from the property label OR the upgrade's
+  // modifiesProperty token.
+  function unitFor(labelOrProp) {
+    if (!labelOrProp) return "";
+    const s = String(labelOrProp);
+    if (/Percent$/.test(s) || /Percent\b/.test(s) || /^Slow Percent$/i.test(s)) return "%";
+    if (/(Cooldown|Duration|Delay|Time)$/i.test(s)) return "s";
+    if (/(Range|Radius|Distance)$/i.test(s)) return "m";
+    return "";
+  }
+
+  // Format a value + unit for display. If the string already carries a unit
+  // (e.g. TTL wrote "20m"), leave it alone. Otherwise append.
+  function withUnit(value, labelOrProp) {
+    if (value == null || value === "") return value;
+    const s = String(value);
+    if (/[a-zA-Z%]$/.test(s)) return s;  // already has unit
+    const u = unitFor(labelOrProp);
+    return u ? s + u : s;
   }
 
   // Predicate name -> human label. Unknown predicates fall back to a Camel
@@ -934,14 +994,19 @@
         const match = properties.find((p) => p.label === label);
         if (match && statDisplay.length < 4) {
           const props = match.properties || {};
-          const baseValue = props.baseValue != null
+          const baseRaw = props.baseValue != null
             ? prettifyPropValue("baseValue", props.baseValue) : null;
+          // Units derived from the property's own label + internal name.
+          const unitHint = props.internalName || match.label;
+          const baseValue = baseRaw != null ? withUnit(baseRaw, unitHint) : null;
+          // prettifyPropValue returns null for "Single Stat" now — that's the
+          // suppressed default — so the badge only shows when informative.
           const scaleFn = props.scaleFunction
             ? prettifyPropValue("scaleFunction", props.scaleFunction) : null;
           statDisplay.push({
             label: match.label,
             value: baseValue,
-            scalesWith: scaleFn && scaleFn !== "Single Stat" ? scaleFn : null,
+            scalesWith: scaleFn || null,
           });
         }
       });
@@ -955,20 +1020,27 @@
         if (!tierBuckets.has(lvl)) tierBuckets.set(lvl, []);
         tierBuckets.get(lvl).push(u);
       });
+      // Format each upgrade in a tier as "<sign><bonus><unit> <prop>" and
+      // stack them inside one stamp. This replaces the "+N more" hint with
+      // the actual effects so players see what T2 does in full.
+      function formatUpgradeEffect(u) {
+        const raw = u.properties?.bonusValue || "";
+        const modProp = u.properties?.modifiesProperty || "";
+        const propLabel = modProp
+          ? prettifyPropValue("modifiesProperty", modProp)
+          : (u.label || "");
+        const unitHint = modProp || propLabel;
+        let bonus = String(raw);
+        // Prepend + for positive values when no sign is present.
+        if (bonus && !/^[+-]/.test(bonus) && !/^0$/.test(bonus)) bonus = "+" + bonus;
+        return { bonus: withUnit(bonus, unitHint), prop: propLabel };
+      }
       const upgradeStamps = [...tierBuckets.entries()]
         .sort(([a], [b]) => parseInt(a, 10) - parseInt(b, 10))
         .slice(0, 3)
         .map(([level, ups]) => {
-          // Primary value = the first upgrade's bonus. If there are siblings,
-          // append a "+N more" hint on the property line.
-          const primary = ups[0];
-          const bonus = primary.properties?.bonusValue || "";
-          let prop = primary.label || "";
-          if (primary.properties?.modifiesProperty) {
-            prop = prettifyPropValue("modifiesProperty", primary.properties.modifiesProperty);
-          }
-          if (ups.length > 1) prop += ` +${ups.length - 1} more`;
-          return { level, value: bonus, prop };
+          const effects = ups.map(formatUpgradeEffect);
+          return { level, effects };
         });
 
       return {
@@ -1057,14 +1129,21 @@
           const lbl = document.createElement("span");
           lbl.className = "tier-label";
           lbl.textContent = "T" + (u.level || "?");
-          const val = document.createElement("span");
-          val.className = "tier-value";
-          val.textContent = u.value ? (u.value.startsWith("-") || u.value.startsWith("+")
-                            ? u.value : "+" + u.value) : "";
-          const prop = document.createElement("span");
-          prop.className = "tier-prop";
-          prop.textContent = u.prop;
-          stamp.append(lbl, val, prop);
+          stamp.appendChild(lbl);
+          // One line per effect at this tier, so the player sees the full
+          // power spike instead of a hidden "+1 more".
+          u.effects.forEach((eff) => {
+            const line = document.createElement("span");
+            line.className = "tier-effect";
+            const val = document.createElement("span");
+            val.className = "tier-value";
+            val.textContent = eff.bonus || "";
+            const prop = document.createElement("span");
+            prop.className = "tier-prop";
+            prop.textContent = eff.prop || "";
+            line.append(val, prop);
+            stamp.appendChild(line);
+          });
           upg.appendChild(stamp);
         });
         card.appendChild(upg);
