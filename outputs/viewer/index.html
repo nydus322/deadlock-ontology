@@ -28,20 +28,22 @@
       <label class="hero-picker-label" for="hero-picker">Hero</label>
       <select id="hero-picker" class="hero-picker"></select>
       <button id="btn-share" title="Copy shareable link">Share</button>
+      <button id="btn-kit-mode" title="Toggle between signature-kit view and every-node view">Show all nodes</button>
       <button id="btn-reset">Reset</button>
       <button id="btn-expand-all">Expand all</button>
       <button id="btn-collapse-all">Collapse</button>
+      <button id="btn-dev-mode" title="Show RDF class filters, edge-predicate chips, and ontology IRIs">Dev</button>
     </div>
   </header>
 
 
   <main>
     <aside id="sidebar-left">
-      <h3>Filters</h3>
-      <p class="hint">Toggle node classes on/off. Class legend doubles as filter.</p>
-      <div id="class-filters"></div>
-      <h3>Edge predicates</h3>
-      <div id="edge-filters"></div>
+      <h3 class="dev-only">Filters</h3>
+      <p class="hint dev-only">Toggle node classes on/off. Class legend doubles as filter.</p>
+      <div id="class-filters" class="dev-only"></div>
+      <h3 class="dev-only">Edge predicates</h3>
+      <div id="edge-filters" class="dev-only"></div>
       <h3>Jump to node</h3>
       <input type="text" id="node-search" placeholder="Type to filter...">
       <ul id="node-list"></ul>
@@ -59,14 +61,29 @@
         <div class="inspector-header">
           <span id="inspector-class-tags"></span>
           <h2 id="inspector-label"></h2>
-          <div class="inspector-iri">
+          <div class="inspector-iri dev-only">
             <code id="inspector-iri"></code>
             <button id="btn-copy-iri" title="Copy IRI">copy</button>
           </div>
         </div>
-        <section>
-          <h4>Literal properties</h4>
-          <table id="inspector-props"><tbody></tbody></table>
+        <section id="props-core" hidden>
+          <h4>Core stats</h4>
+          <table class="inspector-props"><tbody></tbody></table>
+        </section>
+        <section id="props-combat" hidden>
+          <h4>Combat</h4>
+          <table class="inspector-props"><tbody></tbody></table>
+        </section>
+        <section id="props-tags" hidden>
+          <h4>Tags</h4>
+          <div id="props-tags-chips"></div>
+        </section>
+        <section id="props-meta" hidden>
+          <h4>Other</h4>
+          <table class="inspector-props"><tbody></tbody></table>
+        </section>
+        <section id="props-empty-wrap">
+          <h4>Properties</h4>
           <p class="empty-note" id="props-empty">(none)</p>
         </section>
         <section>

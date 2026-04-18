@@ -194,10 +194,21 @@ def build_payload(ttl_path: Path) -> dict:
             }
         return nodes[nid]
 
+    # Predicates whose values are provenance / build-process metadata — not
+    # player-facing. Their targets are filtered out of the graph entirely and
+    # do not survive as properties either (nobody navigating the viewer wants
+    # to see "wasDerivedFrom: scripts/heroes.vdata" on the Infernus card).
+    HIDDEN_PREDICATES = {"wasDerivedFrom", "developerStage"}
+
     # Pass 3: walk all triples.
     for s, p, o in g:
-        s_node = ensure_node(s)
         pn = predicate_class(str(p))
+
+        # Skip provenance-ish predicates before they can create nodes/edges.
+        if pn in HIDDEN_PREDICATES:
+            continue
+
+        s_node = ensure_node(s)
 
         if p == RDF.type and isinstance(o, URIRef):
             s_node["classes"].add(type_class(str(o)))
@@ -227,9 +238,11 @@ def build_payload(ttl_path: Path) -> dict:
             continue
         if isinstance(o, Literal):
             continue
+        pn = predicate_class(str(p))
+        if pn in HIDDEN_PREDICATES:
+            continue
         sid = node_id(s)
         oid = node_id(o)
-        pn = predicate_class(str(p))
         eid = f"{sid}|{pn}|{oid}"
         if eid in edges_seen:
             continue

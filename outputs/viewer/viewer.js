@@ -8,6 +8,46 @@
 (() => {
   const DEFAULT_HERO = "hero_inferno";
 
+  // Slots a player actually cares about: the 4 signature abilities + primary weapon.
+  // Everything else (movement, innates, melee, ziplines) is engine plumbing shared
+  // across all heroes and only shown when "Show all" is toggled on.
+  const SIGNATURE_SLOT_SHORT_IDS = new Set([
+    "slot/Signature1",
+    "slot/Signature2",
+    "slot/Signature3",
+    "slot/Signature4",
+    "slot/WeaponPrimary",
+  ]);
+
+  // Property-panel keys that duplicate the node label or leak engine internals.
+  // These are never shown in the inspector's literal-properties table.
+  const HIDDEN_PROP_KEYS = new Set([
+    "label",              // duplicates the node's H1 heading
+    "altLabel",           // duplicates label
+    "internalName",       // engine identifier
+    "internalKey",        // engine identifier (e.g. hero_inferno)
+    "identifier",         // internal hero_id
+    "isDisabled",         // admin flag
+    "isPlayerSelectable", // admin flag
+    "complexity",         // internal Valve rating (0-3), unclear to players
+  ]);
+
+  // Outgoing / Incoming rows whose predicate is one of these are suppressed.
+  // Kept in sync with ttl_to_cytoscape.py HIDDEN_PREDICATES — belt-and-suspenders
+  // so older pre-filter bundles still display cleanly.
+  const HIDDEN_PREDICATES = new Set(["wasDerivedFrom", "developerStage"]);
+
+  // Slot shortIds in presentation order. Hero cards should read weapon first,
+  // then Ability 1..4 in slot order. Utility slots (movement, melee, etc.)
+  // are sorted after these in the order they happen to appear.
+  const SLOT_SORT_ORDER = [
+    "slot/WeaponPrimary",
+    "slot/Signature1",
+    "slot/Signature2",
+    "slot/Signature3",
+    "slot/Signature4",
+  ];
+
   const CLASS_COLORS = {
     Hero:             "#ff7b72",
     Ability:          "#ffa657",
@@ -43,6 +83,8 @@
     expanded:     new Set(),
     nodesById:    new Map(),
     shortIdToId:  new Map(),
+    kitMode:      true,   // default: show only signature kit
+    kitSet:       null,   // per-hero set of node IDs that are part of the signature kit
   };
 
   // ---- Data loading -----------------------------------------------------------
@@ -158,6 +200,165 @@
     return cy;
   }
 
+  // ---- Kit mode (Hero -> 4 Abilities -> effects) ------------------------------
+
+  function computeKitSet(graph) {
+    const heroNode = graph.nodes.find((n) => (n.data.classes || "").split(/\s+/).includes("Hero"));
+    if (!heroNode) return new Set(graph.nodes.map((n) => n.data.id));
+    const heroId = heroNode.data.id;
+
+    const outgoing = new Map();
+    graph.edges.forEach((e) => {
+      const s = e.data.source, t = e.data.target, p = e.data.label;
+      if (!outgoing.has(s)) outgoing.set(s, []);
+      outgoing.get(s).push([t, p]);
+    });
+    const nodeById = new Map(graph.nodes.map((n) => [n.data.id, n.data]));
+
+    const kit = new Set([heroId]);
+    const sigAbilities = [];
+
+    (outgoing.get(heroId) || []).forEach(([bnodeId, pred]) => {
+      if (pred !== "hasAbilityInSlot") return;
+      const bnodeOuts = outgoing.get(bnodeId) || [];
+      const slotEdge = bnodeOuts.find(([, pp]) => pp === "slot");
+      if (!slotEdge) return;
+      const slotNode = nodeById.get(slotEdge[0]);
+      const slotShort = slotNode?.shortId || "";
+      if (!SIGNATURE_SLOT_SHORT_IDS.has(slotShort)) return;
+      kit.add(bnodeId);
+      bnodeOuts.forEach(([t, pp]) => {
+        kit.add(t);
+        if (pp === "ability") sigAbilities.push(t);
+      });
+    });
+
+    // For each signature ability, include its properties, upgrades, and their 1-hop
+    // (scale functions -> stats, property categories, modifier values).
+    sigAbilities.forEach((aid) => {
+      (outgoing.get(aid) || []).forEach(([t]) => {
+        kit.add(t);
+        (outgoing.get(t) || []).forEach(([t2]) => {
+          kit.add(t2);
+          (outgoing.get(t2) || []).forEach(([t3]) => kit.add(t3));
+        });
+      });
+    });
+
+    return kit;
+  }
+
+  function applyKitMode() {
+    if (!state.cy || !state.kitSet) return;
+    if (state.kitMode) {
+      state.cy.nodes().forEach((n) => n.toggleClass("hidden", !state.kitSet.has(n.id())));
+    } else {
+      state.cy.nodes().forEach((n) => n.removeClass("hidden"));
+    }
+    applyEdgeFilter();
+    updateKitModeButton();
+  }
+
+  function updateKitModeButton() {
+    const btn = document.getElementById("btn-kit-mode");
+    if (!btn) return;
+    btn.textContent = state.kitMode ? "Show all nodes" : "Kit only";
+    btn.title = state.kitMode
+      ? "Currently showing the signature kit — click to reveal movement, melee, and utility nodes."
+      : "Currently showing every node — click to focus on the 4 signature abilities.";
+  }
+
+  // ---- Property-panel pretty-print --------------------------------------------
+
+  function prettifyPropKey(k) {
+    // Strip "starting" prefix that Deadlock uses on hero-base stats.
+    //   startingMaxHealth -> "Max Health"
+    //   startingStaminaRegenPerSecond -> "Stamina Regen Per Second"
+    let key = k.replace(/^starting/, "");
+    if (key.length === 0) key = k;
+    const spaced = key.replace(/([a-z0-9])([A-Z])/g, "$1 $2");
+    return spaced.charAt(0).toUpperCase() + spaced.slice(1);
+  }
+  function prettifyPropValue(k, v) {
+    if (typeof v === "number") {
+      // Round floats to 3 sig figs; leave ints alone.
+      return Number.isInteger(v) ? String(v) : String(Math.round(v * 1000) / 1000);
+    }
+    if (typeof v !== "string") return String(v);
+
+    // Round stringified floats coming from the TTL ("0.222222" -> "0.222").
+    if (/^-?\d+\.\d{4,}$/.test(v)) {
+      const n = parseFloat(v);
+      if (!Number.isNaN(n)) return String(Math.round(n * 1000) / 1000);
+    }
+
+    // Strip Valve's ubiquitous `E<Kind>_` enum prefixes.
+    //   EResourceType_None -> "None"
+    //   ECitadelHeroType_Marksman -> "Marksman"
+    const enumStrip = v.match(/^E[A-Z][A-Za-z0-9]*_(.+)$/);
+    if (enumStrip) {
+      const inner = enumStrip[1];
+      // "SingleStat" -> "Single Stat"
+      return inner.replace(/([a-z0-9])([A-Z])/g, "$1 $2");
+    }
+
+    if (k === "scaleFunction") {
+      return v.replace(/^scale_function_/, "")
+              .split("_")
+              .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+              .join(" ");
+    }
+    if (k === "modifiesProperty") {
+      // Preserve bare acronyms (DPS, HP); CamelCase split otherwise.
+      if (/^[A-Z0-9]+$/.test(v) && v.length <= 5) return v;
+      return v.replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+              .replace(/^./, (c) => c.toUpperCase());
+    }
+    return v;
+  }
+
+  // Predicate name -> human label. Unknown predicates fall back to a Camel
+  // split with first letter capitalised.
+  const PREDICATE_LABELS = {
+    hasAbilityInSlot:     "Ability in slot",
+    ability:              "Ability",
+    slot:                 "Slot",
+    hasProperty:          "Property",
+    hasUpgrade:           "Upgrade",
+    scalesStat:           "Scales with",
+    primaryCategory:      "Primary category",
+    secondaryCategory:    "Secondary category",
+    providesModifierType: "Modifier type",
+  };
+  function prettifyPredicate(p) {
+    if (PREDICATE_LABELS[p]) return PREDICATE_LABELS[p];
+    return p.replace(/([a-z0-9])([A-Z])/g, "$1 $2")
+            .replace(/^./, (c) => c.toUpperCase());
+  }
+
+  // RDF-internal classes. Players never need to filter by these; they're
+  // revealed only in dev mode.
+  const DEV_ONLY_CLASSES = new Set([
+    "BlankNode", "Resource", "Stage", "ModifierValue",
+  ]);
+  // Predicates that are also dev-ish.
+  const DEV_ONLY_PREDICATES = new Set([
+    "wasDerivedFrom", "developerStage", "providesModifierType",
+  ]);
+
+  // Bucket a property key into an inspector section.
+  //   "Core"    = vitals (health / move / stamina / regen)
+  //   "Combat"  = melee damage, tech range/duration, reload, charges
+  //   "Meta"    = tags, role strings, anything else that slipped through
+  function classifyPropKey(k) {
+    const core = /^starting(Max(Health|MoveSpeed)|HeavyMeleeDamage|LightMeleeDamage|BaseHealthRegen|Stamina(RegenPerSecond)?|SprintSpeed|ReloadSpeed|TechDuration|TechRange)$/;
+    if (core.test(k)) {
+      if (/MoveSpeed|SprintSpeed|HealthRegen|Max(Health|MoveSpeed)|Stamina/.test(k)) return "Core";
+      return "Combat";
+    }
+    return "Meta";
+  }
+
   // ---- Filters ----------------------------------------------------------------
 
   function applyClassFilter() {
@@ -208,6 +409,11 @@
     state.expanded = new Set([rootId()]);
     applyExpansion();
   }
+  function expandKit() {
+    if (!state.kitSet) return;
+    state.expanded = new Set(state.kitSet);
+    applyExpansion();
+  }
 
   // ---- Root resolution --------------------------------------------------------
 
@@ -248,18 +454,77 @@
       toast("IRI copied");
     };
 
-    const tbody = document.querySelector("#inspector-props tbody");
-    tbody.innerHTML = "";
-    const entries = Object.entries(n.properties || {});
-    document.getElementById("props-empty").hidden = entries.length > 0;
-    entries.sort(([a], [b]) => a.localeCompare(b)).forEach(([k, v]) => {
-      const tr = document.createElement("tr");
-      const td1 = document.createElement("td"); td1.textContent = k;
-      const td2 = document.createElement("td");
-      td2.textContent = Array.isArray(v) ? v.join(", ") : String(v);
-      tr.append(td1, td2);
-      tbody.appendChild(tr);
+    // Grouped literal properties: Core / Combat / Tags / Other.
+    const sectionIds = ["props-core", "props-combat", "props-tags", "props-meta"];
+    sectionIds.forEach((id) => {
+      const el = document.getElementById(id);
+      el.hidden = true;
+      const tbody = el.querySelector("tbody");
+      if (tbody) tbody.innerHTML = "";
     });
+    document.getElementById("props-tags-chips").innerHTML = "";
+
+    const rawEntries = Object.entries(n.properties || {})
+      .filter(([k]) => !HIDDEN_PROP_KEYS.has(k));
+    const hasAny = rawEntries.length > 0;
+    document.getElementById("props-empty-wrap").hidden = hasAny;
+    document.getElementById("props-empty").hidden = hasAny;
+
+    const buckets = { Core: [], Combat: [], Meta: [] };
+    let tagValue = null;
+    rawEntries.forEach(([k, v]) => {
+      if (k === "heroTag") { tagValue = v; return; }
+      buckets[classifyPropKey(k)].push([k, v]);
+    });
+
+    // Stable sort within bucket: Core in vitals order, Combat alpha, Meta alpha.
+    const CORE_ORDER = [
+      "startingMaxHealth", "startingBaseHealthRegen", "startingMaxMoveSpeed",
+      "startingSprintSpeed", "startingStamina", "startingStaminaRegenPerSecond",
+    ];
+    buckets.Core.sort(([a], [b]) => {
+      const ai = CORE_ORDER.indexOf(a), bi = CORE_ORDER.indexOf(b);
+      if (ai === -1 && bi === -1) return a.localeCompare(b);
+      if (ai === -1) return 1;
+      if (bi === -1) return -1;
+      return ai - bi;
+    });
+    buckets.Combat.sort(([a], [b]) => a.localeCompare(b));
+    buckets.Meta.sort(([a], [b]) => a.localeCompare(b));
+
+    function fillSection(sectionId, entries) {
+      if (!entries.length) return;
+      const el = document.getElementById(sectionId);
+      el.hidden = false;
+      const tbody = el.querySelector("tbody");
+      entries.forEach(([k, v]) => {
+        const tr = document.createElement("tr");
+        const td1 = document.createElement("td"); td1.textContent = prettifyPropKey(k);
+        const td2 = document.createElement("td");
+        const pretty = Array.isArray(v)
+          ? v.map((vv) => prettifyPropValue(k, vv)).join(", ")
+          : prettifyPropValue(k, v);
+        td2.textContent = pretty;
+        tr.append(td1, td2);
+        tbody.appendChild(tr);
+      });
+    }
+    fillSection("props-core", buckets.Core);
+    fillSection("props-combat", buckets.Combat);
+    fillSection("props-meta", buckets.Meta);
+
+    if (tagValue != null) {
+      const tagEl = document.getElementById("props-tags");
+      tagEl.hidden = false;
+      const chips = document.getElementById("props-tags-chips");
+      const raw = Array.isArray(tagValue) ? tagValue : String(tagValue).split(",");
+      raw.map((s) => s.trim()).filter(Boolean).forEach((tag) => {
+        const c = document.createElement("span");
+        c.className = "tag-chip";
+        c.textContent = tag;
+        chips.appendChild(c);
+      });
+    }
 
     const cyNode = state.cy.getElementById(nodeId);
     const outgoingList = document.getElementById("inspector-outgoing");
@@ -267,17 +532,45 @@
     outgoingList.innerHTML = "";
     incomingList.innerHTML = "";
 
-    const outs = cyNode.outgoers("edge");
-    const ins  = cyNode.incomers("edge");
-    document.getElementById("outgoing-empty").hidden = outs.length > 0;
-    document.getElementById("incoming-empty").hidden = ins.length > 0;
+    // Outgoing rows sorted by slot order for Hero nodes (Weapon -> Ab1..4),
+    // by predicate name otherwise. Provenance-ish predicates are filtered.
+    const outsVisible = cyNode.outgoers("edge")
+      .filter((e) => !HIDDEN_PREDICATES.has(e.data("label")));
+    const insVisible = cyNode.incomers("edge")
+      .filter((e) => !HIDDEN_PREDICATES.has(e.data("label")));
 
-    outs.forEach((e) => {
+    document.getElementById("outgoing-empty").hidden = outsVisible.length > 0;
+    document.getElementById("incoming-empty").hidden = insVisible.length > 0;
+
+    function outgoingSortKey(e) {
+      // For Hero -> hasAbilityInSlot bnode edges, sort by the slot that bnode
+      // binds to (Weapon first, then Ability 1..4, then utility alphabetical).
+      if (e.data("label") === "hasAbilityInSlot") {
+        const bnode = e.target();
+        const slotEdge = bnode.outgoers("edge").filter((ee) => ee.data("label") === "slot")[0];
+        if (slotEdge) {
+          const slotShort = slotEdge.target().data("shortId") || "";
+          const idx = SLOT_SORT_ORDER.indexOf(slotShort);
+          return [0, idx === -1 ? 99 : idx, slotShort];
+        }
+      }
+      return [1, 0, e.data("label")];
+    }
+    const outsSorted = outsVisible.toArray().sort((a, b) => {
+      const ka = outgoingSortKey(a), kb = outgoingSortKey(b);
+      for (let i = 0; i < ka.length; i++) {
+        if (ka[i] < kb[i]) return -1;
+        if (ka[i] > kb[i]) return 1;
+      }
+      return 0;
+    });
+
+    outsSorted.forEach((e) => {
       const target = e.target();
       const li = document.createElement("li");
       const predSpan = document.createElement("span");
       predSpan.className = "pred";
-      predSpan.textContent = e.data("label") + " \u2192";
+      predSpan.textContent = prettifyPredicate(e.data("label")) + " \u2192";
       const targetSpan = document.createElement("span");
       targetSpan.className = "target";
       targetSpan.textContent = target.data("label");
@@ -285,12 +578,12 @@
       li.append(predSpan, targetSpan);
       outgoingList.appendChild(li);
     });
-    ins.forEach((e) => {
+    insVisible.forEach((e) => {
       const source = e.source();
       const li = document.createElement("li");
       const predSpan = document.createElement("span");
       predSpan.className = "pred";
-      predSpan.textContent = "\u2190 " + e.data("label");
+      predSpan.textContent = "\u2190 " + prettifyPredicate(e.data("label"));
       const srcSpan = document.createElement("span");
       srcSpan.className = "target";
       srcSpan.textContent = source.data("label");
@@ -398,6 +691,7 @@
     present.forEach((c) => {
       const chip = document.createElement("span");
       chip.className = "chip";
+      if (DEV_ONLY_CLASSES.has(c)) chip.classList.add("dev-only");
       chip.innerHTML =
         `<span class="chip-swatch" style="background:${CLASS_COLORS[c]}"></span>` +
         `<span class="chip-label">${c}</span>` +
@@ -430,8 +724,9 @@
     preds.forEach((p) => {
       const chip = document.createElement("span");
       chip.className = "chip";
+      if (DEV_ONLY_PREDICATES.has(p)) chip.classList.add("dev-only");
       chip.innerHTML =
-        `<span class="chip-label">${p}</span>` +
+        `<span class="chip-label">${prettifyPredicate(p)}</span>` +
         `<span class="chip-count">${counts[p]}</span>`;
       chip.addEventListener("click", () => {
         if (state.edgeFilter.has(p)) {
@@ -450,12 +745,39 @@
   function buildNodeList() {
     const listEl = document.getElementById("node-list");
     const inputEl = document.getElementById("node-search");
+
+    // Scope-by-parent: for blank-node ability properties / upgrades, many labels
+    // are generic ("Cooldown", "Damage"). Find the parent Ability node and
+    // prepend its label, so "Afterburn › Cooldown" disambiguates four Cooldowns.
+    const nodeById = new Map(state.graph.nodes.map((n) => [n.data.id, n.data]));
+    const parentAbilityLabel = (nid) => {
+      // A blank-node ability property/upgrade has exactly one incoming
+      // hasProperty or hasUpgrade edge from an ability.
+      for (const e of state.graph.edges) {
+        if (e.data.target === nid && (e.data.label === "hasProperty" || e.data.label === "hasUpgrade")) {
+          const parent = nodeById.get(e.data.source);
+          if (parent) return parent.label;
+        }
+      }
+      return null;
+    };
+
     const entries = state.graph.nodes
-      .map((n) => ({
-        id: n.data.id,
-        label: n.data.label,
-        cls: primaryClass(n.data.classes),
-      }))
+      .map((n) => {
+        const cls = primaryClass(n.data.classes);
+        let label = n.data.label;
+        // Scope generic blank-node labels by their parent ability.
+        if (cls === "AbilityProperty" || cls === "AbilityUpgrade") {
+          const parent = parentAbilityLabel(n.data.id);
+          if (parent) label = `${parent} \u203A ${n.data.label}`;
+        }
+        return {
+          id: n.data.id,
+          label,
+          cls,
+          devOnly: DEV_ONLY_CLASSES.has(cls),
+        };
+      })
       .sort((a, b) => {
         const ao = CLASS_ORDER.indexOf(a.cls);
         const bo = CLASS_ORDER.indexOf(b.cls);
@@ -468,6 +790,7 @@
       for (const e of entries) {
         if (ql && !e.label.toLowerCase().includes(ql) && !e.cls.toLowerCase().includes(ql)) continue;
         const li = document.createElement("li");
+        if (e.devOnly) li.classList.add("dev-only");
         li.innerHTML =
           `<span class="swatch" style="background:${CLASS_COLORS[e.cls] || "#888"}"></span>` +
           `<span class="node-label" title="${e.cls} \u2014 ${e.label}">${e.label}</span>`;
@@ -517,7 +840,10 @@
     buildEdgeFilters();
     buildNodeList();
 
+    state.kitSet = computeKitSet(state.graph);
     state.expanded = new Set([rootId()]);
+    if (state.kitMode) state.kitSet.forEach((id) => state.expanded.add(id));
+    applyKitMode();
     applyExpansion();
 
     document.getElementById("meta-summary").innerHTML =
@@ -624,6 +950,21 @@
       });
       document.getElementById("btn-expand-all").addEventListener("click", expandAll);
       document.getElementById("btn-collapse-all").addEventListener("click", collapseToRoot);
+      document.getElementById("btn-kit-mode").addEventListener("click", () => {
+        state.kitMode = !state.kitMode;
+        if (state.kitMode) expandKit();
+        applyKitMode();
+        state.cy.layout({
+          name: "fcose", animate: true, animationDuration: 400,
+          randomize: false, idealEdgeLength: 90, nodeRepulsion: 8000,
+        }).run();
+        state.cy.fit(null, 40);
+      });
+      document.getElementById("btn-dev-mode").addEventListener("click", () => {
+        document.body.classList.toggle("dev-mode");
+        const on = document.body.classList.contains("dev-mode");
+        document.getElementById("btn-dev-mode").classList.toggle("active", on);
+      });
       document.getElementById("btn-share").addEventListener("click", () => {
         const url = window.location.href;
         navigator.clipboard.writeText(url).then(() => toast("Link copied")).catch(() => toast(url));
