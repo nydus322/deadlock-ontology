@@ -27,10 +27,13 @@ class _GraphCanvasState extends ConsumerState<GraphCanvas> {
   final _transform = TransformationController();
 
   // Cache keys — rebuild layout only when these change.
-  String?      _lastHeroCode;
-  Set<String>? _lastClassFilter;
-  Set<String>? _lastEdgeFilter;
-  bool?        _lastKitMode;
+  // Sets are compared by canonical string to avoid Dart reference-equality pitfalls.
+  String?  _lastHeroCode;
+  String?  _lastClassFilter;
+  String?  _lastEdgeFilter;
+  bool?    _lastKitMode;
+
+  static String _setKey(Set<String> s) => (s.toList()..sort()).join('\x00');
 
   // Pointer-down state for tap detection.
   Offset?   _pointerDownLocal;
@@ -85,8 +88,6 @@ class _GraphCanvasState extends ConsumerState<GraphCanvas> {
     _nodes = result.nodes;
     _edges = result.edges;
     _lastHeroCode    = heroCode;
-    _lastClassFilter = Set.from(edgeFilter);   // reused as combined key
-    _lastEdgeFilter  = Set.from(edgeFilter);
     _lastKitMode     = null; // reset — will be set below by caller
 
     // Fit viewport after the frame is rendered.
@@ -195,10 +196,15 @@ class _GraphCanvasState extends ConsumerState<GraphCanvas> {
         .firstOrNull ?? '';
 
     // Rebuild when hero, filters, or kit mode change.
-    final needsRebuild = _lastHeroCode   != heroCode        ||
-                         _lastKitMode    != graphState.kitMode  ||
-                         _lastClassFilter != graphState.classFilter ||
-                         _lastEdgeFilter  != graphState.edgeFilter  ||
+    // Use string keys for Set comparisons — Dart Sets use reference equality,
+    // so storing them directly would always evaluate as changed.
+    final classKey = _setKey(graphState.classFilter);
+    final edgeKey  = _setKey(graphState.edgeFilter);
+
+    final needsRebuild = _lastHeroCode    != heroCode           ||
+                         _lastKitMode     != graphState.kitMode ||
+                         _lastClassFilter != classKey           ||
+                         _lastEdgeFilter  != edgeKey            ||
                          _nodes.isEmpty;
 
     if (needsRebuild) {
@@ -208,8 +214,8 @@ class _GraphCanvasState extends ConsumerState<GraphCanvas> {
         heroCode, rootId,
       );
       _lastKitMode     = graphState.kitMode;
-      _lastClassFilter = Set.from(graphState.classFilter);
-      _lastEdgeFilter  = Set.from(graphState.edgeFilter);
+      _lastClassFilter = classKey;
+      _lastEdgeFilter  = edgeKey;
     }
 
     final nodeDataById = <String, NodeData>{
