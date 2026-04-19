@@ -47,6 +47,7 @@ PREFIXES = {
     f"{NYDUS_BASE}slot/":    "slot",
     f"{NYDUS_BASE}sf/":      "sf",
     f"{NYDUS_BASE}cat/":     "cat",
+    f"{NYDUS_BASE}prop/":    "prop",
     f"{NYDUS_BASE}stage/":   "stage",
     NYDUS_BASE:                          "nydus",
     "http://www.w3.org/2000/01/rdf-schema#": "rdfs",
@@ -93,6 +94,7 @@ PREFIX_CLASS = {
     "mv":      "ModifierValue",
     "stage":   "Stage",
     "cat":     "PropertyCategory",
+    "prop":    "PropertyType",
     "hero":    "Hero",
     "ability": "Ability",
 }
@@ -122,9 +124,15 @@ def stable_blank_id(g: rdflib.Graph, bnode: BNode, parent_iri: str | None) -> st
     parent_short = short_id(parent_iri) if parent_iri else "orphan"
 
     # Try to extract a stable discriminator from the blank node's content.
+    # Prefer canonical IRI references (propertyType, modifiesPropertyType)
+    # over the legacy string predicates so blank-node IDs remain stable
+    # across the canonicalization migration.
     discriminators = []
     for p, o in g.predicate_objects(bnode):
         pn = local_name(str(p))
+        if pn in ("propertyType", "modifiesPropertyType"):
+            discriminators.append(local_name(str(o)))
+            break
         if pn in ("internalName", "modifiesProperty") and isinstance(o, Literal):
             discriminators.append(str(o))
             break

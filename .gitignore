@@ -19,3 +19,24 @@ Knowledge/
 Thumbs.db
 desktop.ini
 upload.out
+
+# Generated outputs — regenerable from src/ via the pipeline.
+# Heroes, viewer, and bundled HTML are NOT tracked; the source code +
+# Deadlock vdata is the canonical input. Run graph_builder.py +
+# ttl_to_cytoscape.py + bundle.py to materialise them locally.
+outputs/heroes/
+outputs/viewer/
+outputs/nydus.html
+
+# Dev / pipeline scratch outputs (regenerable, not consumer-facing)
+outputs/roster.jsonl
+outputs/roster_intelligence.md
+outputs/frequency_report.md
+outputs/rubric.md
+outputs/stat_bridge.jsonl
+outputs/stat_bridge_summary.md
+outputs/unknowns.jsonl
+outputs/wander_questions.md
+outputs/proof.html
+outputs/abrams.ttl
+outputs/infernus.ttl

@@ -1,6 +1,8 @@
 # DID_SWAP_TARGET: replace http://nydus.gg/ontology# with did:key:z6Mk...#ward/ on publish
 @prefix nydus:   <http://nydus.gg/ontology#> .
 @prefix cat:     <http://nydus.gg/ontology#cat/> .
+@prefix prop:    <http://nydus.gg/ontology#prop/> .
+@prefix sf:      <http://nydus.gg/ontology#sf/> .
 @prefix sh:      <http://www.w3.org/ns/shacl#> .
 @prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
@@ -24,6 +26,40 @@ nydus:PropertyCategoryShape
     ] .
 
 # ============================================================
+# nydus:PropertyTypeShape
+#
+# Canonical vocabulary for ability property identity. One IRI per
+# distinct mechanical property across the corpus (Cooldown, Damage,
+# Duration, Cast Range, Charges, …). Per-ability AbilityProperty blank
+# nodes reference these via nydus:propertyType. Per-tier AbilityUpgrade
+# blank nodes reference these via nydus:modifiesPropertyType.
+# ============================================================
+nydus:PropertyTypeShape
+    a sh:NodeShape ;
+    sh:targetClass nydus:PropertyType ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:minCount 1 ;
+        sh:maxCount 1
+    ] .
+
+# ============================================================
+# nydus:ScaleFunctionShape
+#
+# Canonical vocabulary for stat-scaling functions. ~7 IRIs in player
+# vocabulary (Spirit Power, Weapon Damage, Spirit Duration, …). The
+# nydus:scaleFunction predicate on AbilityProperty references these.
+# ============================================================
+nydus:ScaleFunctionShape
+    a sh:NodeShape ;
+    sh:targetClass nydus:ScaleFunction ;
+    sh:property [
+        sh:path rdfs:label ;
+        sh:minCount 1 ;
+        sh:maxCount 1
+    ] .
+
+# ============================================================
 # nydus:AbilityPropertyShape
 #
 # One instance per mechanical property on an ability.
@@ -35,10 +71,13 @@ nydus:AbilityPropertyShape
     a sh:NodeShape ;
     sh:targetClass nydus:AbilityProperty ;
     sh:property [
-        sh:path nydus:internalName ;
+        sh:path nydus:propertyType ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
-        sh:datatype xsd:string
+        sh:class nydus:PropertyType
+        # Replaces the old string-typed nydus:internalName. Every property
+        # blank node now points at a canonical prop:* IRI declared in the
+        # vocabulary block at the top of the same file.
     ] ;
     sh:property [
         sh:path nydus:baseValue ;
@@ -81,7 +120,9 @@ nydus:AbilityPropertyShape
     sh:property [
         sh:path nydus:scaleFunction ;
         sh:maxCount 1 ;
-        sh:datatype xsd:string
+        sh:class nydus:ScaleFunction
+        # Was xsd:string ("scale_function_tech_damage"). Now references a
+        # canonical sf:* IRI in player vocabulary (sf:SpiritPower etc.).
     ] ;
     sh:property [
         sh:path nydus:providesModifierType ;
@@ -106,10 +147,15 @@ nydus:AbilityUpgradeShape
         sh:maxInclusive 3
     ] ;
     sh:property [
-        sh:path nydus:modifiesProperty ;
+        sh:path nydus:modifiesPropertyType ;
         sh:minCount 1 ;
         sh:maxCount 1 ;
-        sh:datatype xsd:string
+        sh:class nydus:PropertyType
+        # Replaces the old string-typed nydus:modifiesProperty. Each upgrade
+        # references a canonical prop:* IRI; ability-specific properties get
+        # a synthetic IRI generated from the engine name (still stable across
+        # heroes), so a single SPARQL traversal can answer "which upgrades
+        # affect prop:Cooldown?" across the whole corpus.
     ] ;
     sh:property [
         sh:path nydus:bonusValue ;
