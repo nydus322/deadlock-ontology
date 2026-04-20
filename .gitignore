@@ -19,3 +19,26 @@ Knowledge/
 Thumbs.db
 desktop.ini
 upload.out
+
+# Intermediate pipeline outputs — regenerable from src/ + a Deadlock install.
+# Per-hero TTLs are not tracked; the bundled HTML (outputs/*.html) is the
+# consumer-facing artifact GitHub Pages serves.
+outputs/heroes/
+
+# The viewer source (HTML/CSS/JS/lib) IS tracked — bundle.py reads it.
+# Only the generated Cytoscape JSON is ignored.
+outputs/viewer/graphs.json
+outputs/viewer/graph.json
+
+# Dev / pipeline scratch outputs (regenerable, not consumer-facing)
+outputs/roster.jsonl
+outputs/roster_intelligence.md
+outputs/frequency_report.md
+outputs/rubric.md
+outputs/stat_bridge.jsonl
+outputs/stat_bridge_summary.md
+outputs/unknowns.jsonl
+outputs/wander_questions.md
+outputs/proof.html
+outputs/abrams.ttl
+outputs/infernus.ttl

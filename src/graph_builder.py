@@ -120,6 +120,19 @@ def slot_iri(slot: str) -> str:
     return f"slot:{slug}"
 
 def sf_iri(sf: str) -> str:
+    """Engine scale-function code -> canonical sf: IRI.
+
+    Mapped codes use the player-vocabulary local-name from SCALE_FUNCTION_MAP
+    (e.g. 'scale_function_tech_damage' -> 'sf:SpiritPower'). Unmapped codes
+    fall back to a slugged form so new engine codes still produce stable IRIs.
+
+    Note: SCALE_FUNCTION_MAP is defined later in the file, so look it up via
+    globals() — the helper is called from emission code that runs after both
+    are loaded.
+    """
+    canonical = globals().get("SCALE_FUNCTION_MAP", {}).get(sf)
+    if canonical:
+        return f"sf:{canonical}"
     slug = sf.replace("scale_function_", "").replace("_", " ").title().replace(" ", "")
     return f"sf:{slug}"
 
@@ -702,6 +715,7 @@ TTL_PREFIXES = """\
 @prefix slot:    <http://nydus.gg/ontology#slot/> .
 @prefix sf:      <http://nydus.gg/ontology#sf/> .
 @prefix cat:     <http://nydus.gg/ontology#cat/> .
+@prefix prop:    <http://nydus.gg/ontology#prop/> .
 @prefix stage:   <http://nydus.gg/ontology#stage/> .
 @prefix rdf:     <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
 @prefix rdfs:    <http://www.w3.org/2000/01/rdf-schema#> .
@@ -810,6 +824,154 @@ CATEGORY_LABELS: dict[str, str] = {
     "Stat":      "Stat Modifier",
     "Unknown":   "Unknown",
 }
+
+# ============================================================================
+# CANONICAL VOCABULARY — PropertyType and ScaleFunction
+#
+# Engine-internal names (e.g. "AbilityCooldown", "scale_function_tech_damage")
+# are mapped to small, named, validated IRI sets. Per-ability blank nodes then
+# reference the canonical IRI with `nydus:propertyType prop:Cooldown` and
+# `nydus:scaleFunction sf:SpiritPower` instead of carrying redundant strings.
+#
+# This shrinks the corpus by ~2k triples, makes SPARQL traversals trivial
+# ("which abilities scale with Spirit Power?"), and adopts player-facing
+# vocabulary (Spirit, not Tech) at the data layer so downstream consumers
+# don't need a swap.
+# ============================================================================
+
+# Engine internalName -> canonical PropertyType local-name (under prop: prefix).
+# Used by both AbilityProperty `propertyType` and AbilityUpgrade
+# `modifiesPropertyType`. Unmapped names fall back to a synthetic
+# `prop:<CamelCase>` IRI generated from the engine token (still canonical
+# across heroes — same engine name yields the same IRI everywhere).
+PROPERTY_TYPE_MAP: dict[str, str] = {
+    "AbilityCooldown":              "Cooldown",
+    "AbilityDuration":              "Duration",
+    "AbilityCastRange":             "CastRange",
+    "AbilityCharges":               "Charges",
+    "AbilityCooldownBetweenCharge": "RechargeTime",
+    "AbilityRadius":                "Radius",
+    "Damage":                       "Damage",
+    "DPS":                          "DPS",
+    "DamageBuff":                   "DamageBuff",
+    "DamageTaken":                  "DamageTaken",
+    "HealAmount":                   "HealAmount",
+    "HealPercent":                  "HealPercent",
+    "HealthRegenBonus":             "HealthRegen",
+    "MaxStacks":                    "MaxStacks",
+    "MoveSpeedBonus":               "MoveSpeed",
+    "SpeedInitial":                 "InitialSpeed",
+    "ChargeSpeedMax":               "MaxChargeSpeed",
+    "ChargeRadius":                 "ChargeRadius",
+    "StunDuration":                 "StunDuration",
+    "SlowPercent":                  "SlowPercent",
+    "SlowDuration":                 "SlowDuration",
+    "TechPower":                    "SpiritPower",
+    "WeaponPower":                  "WeaponPower",
+    "WeaponDamageBonus":            "WeaponDamageBonus",
+    "WeaponPowerIncreaseDuration":  "WeaponPowerDuration",
+    "RegenIncomingDamagePercent":   "RegenFromDamage",
+}
+
+# Display label for each PropertyType (player-facing). Falls back to a
+# prettified local-name if not listed.
+PROPERTY_TYPE_LABELS: dict[str, str] = {
+    "Cooldown":            "Cooldown",
+    "Duration":            "Duration",
+    "CastRange":           "Cast Range",
+    "Charges":             "Charges",
+    "RechargeTime":        "Recharge Time",
+    "Radius":              "Radius",
+    "Damage":              "Damage",
+    "DPS":                 "Damage Per Second",
+    "DamageBuff":          "Damage Buff",
+    "DamageTaken":         "Damage Taken",
+    "HealAmount":          "Heal Amount",
+    "HealPercent":         "Heal Percent",
+    "HealthRegen":         "Health Regen",
+    "MaxStacks":           "Max Stacks",
+    "MoveSpeed":           "Move Speed",
+    "InitialSpeed":        "Initial Speed",
+    "MaxChargeSpeed":      "Max Charge Speed",
+    "ChargeRadius":        "Charge Radius",
+    "StunDuration":        "Stun Duration",
+    "SlowPercent":         "Slow Percent",
+    "SlowDuration":        "Slow Duration",
+    "SpiritPower":         "Spirit Power",
+    "WeaponPower":         "Weapon Power",
+    "WeaponDamageBonus":   "Weapon Damage Bonus",
+    "WeaponPowerDuration": "Weapon Power Duration",
+    "RegenFromDamage":     "Regen From Damage",
+}
+
+# Engine scale-function code -> canonical ScaleFunction local-name (under sf:
+# prefix). Player vocabulary at the canonical layer: "scale_function_tech_*"
+# becomes "Spirit*" so downstream consumers do not need a Tech->Spirit swap.
+# Unmapped functions fall back to slugged engine name via sf_iri().
+SCALE_FUNCTION_MAP: dict[str, str] = {
+    "scale_function_tech_damage":         "SpiritPower",
+    "scale_function_tech_power":          "SpiritPower",
+    "scale_function_tech_range":          "SpiritRange",
+    "scale_function_tech_duration":       "SpiritDuration",
+    "scale_function_tech_cooldown":       "SpiritCooldown",
+    "scale_function_weapon_damage":       "WeaponDamage",
+    "scale_function_ability_weapon_damage": "WeaponDamage",
+    "scale_function_ability_charges":     "AbilityCharges",
+    "scale_function_ability_cooldown":    "AbilityCooldown",
+    "scale_function_ability_duration":    "AbilityDuration",
+    "scale_function_light_melee_damage":  "LightMelee",
+    "scale_function_heavy_melee_damage":  "HeavyMelee",
+    "scale_function_weapon_falloff":      "WeaponFalloff",
+    "scale_function_multi_stats":         "MultipleStats",
+    "scale_function_single_stat":         "Self",
+    "scale_function_no_scaling":          "None",
+}
+
+# Display label for each ScaleFunction. Player vocabulary; the predicate
+# `nydus:scaleFunction` already implies "scales with", so the label is just
+# the stat name.
+SCALE_FUNCTION_LABELS: dict[str, str] = {
+    "SpiritPower":     "Spirit Power",
+    "SpiritRange":     "Spirit Range",
+    "SpiritDuration":  "Spirit Duration",
+    "SpiritCooldown":  "Spirit Cooldown",
+    "WeaponDamage":    "Weapon Damage",
+    "AbilityCharges":  "Ability Charges",
+    "AbilityCooldown": "Ability Cooldown",
+    "AbilityDuration": "Ability Duration",
+    "LightMelee":      "Light Melee",
+    "HeavyMelee":      "Heavy Melee",
+    "WeaponFalloff":   "Weapon Falloff",
+    "MultipleStats":   "Multiple Stats",
+    "Self":            "Self",
+    "None":            "No Scaling",
+}
+
+
+def prop_iri(internal_name: str) -> str:
+    """Engine property internalName -> canonical prop: IRI.
+
+    Mapped names get the curated local-name from PROPERTY_TYPE_MAP. Unmapped
+    names fall back to a synthetic CamelCase form so the IRI is still stable
+    across heroes (same engine name -> same IRI) — which makes ability-specific
+    properties like 'GroundFlameDuration' still queryable as `prop:GroundFlameDuration`.
+    """
+    local = PROPERTY_TYPE_MAP.get(internal_name)
+    if not local:
+        # Synthetic fallback: strip non-alphanumeric, ensure CamelCase.
+        cleaned = re.sub(r"[^A-Za-z0-9]", "", internal_name)
+        local = cleaned or "Unknown"
+    return f"prop:{local}"
+
+
+def prop_label(internal_name: str) -> str:
+    """Player-facing label for a canonical PropertyType IRI."""
+    local = PROPERTY_TYPE_MAP.get(internal_name)
+    if local and local in PROPERTY_TYPE_LABELS:
+        return PROPERTY_TYPE_LABELS[local]
+    if local:
+        return _prettify(local)
+    return _prettify(internal_name)
 
 # ============================================================================
 # DISPLAY-LABEL RESOLVERS
@@ -973,13 +1135,18 @@ def _ability_property_block(
     mv: Optional[str],
     loc: dict,
 ) -> str:
-    """Return a nydus:hasProperty [...] ; block string for one ability property."""
-    prop_label = resolve_property_label(prop_name, loc)
+    """Return a nydus:hasProperty [...] ; block string for one ability property.
+
+    The blank node carries the per-ability instance values (baseValue, scale
+    factor, the specific stat it scales against). All canonical vocabulary —
+    the property's identity (cooldown vs damage vs duration), the scale
+    function (Spirit Power vs Weapon Damage), the category — is referenced
+    by IRI from per-hero vocab tables emitted at the top of the TTL.
+    """
     lines = [
         "    nydus:hasProperty [",
         "        a nydus:AbilityProperty ;",
-        f"        rdfs:label {_tstr_lang(prop_label)} ;",
-        f"        nydus:internalName {_tstr(prop_name)} ;",
+        f"        nydus:propertyType {prop_iri(prop_name)} ;",
         f"        nydus:baseValue {_tdec(raw)} ;",
     ]
 
@@ -1002,7 +1169,7 @@ def _ability_property_block(
     if sf_factor is not None:
         lines.append(f"        nydus:scaleFactor {_tdec(sf_factor)} ;")
     if sf_class:
-        lines.append(f"        nydus:scaleFunction {_tstr(sf_class)} ;")
+        lines.append(f"        nydus:scaleFunction {sf_iri(sf_class)} ;")
     if isinstance(sf_multi, list):
         for ms in sf_multi:
             lines.append(f"        nydus:scalesStat {stat_iri(str(ms))} ;")
@@ -1045,6 +1212,29 @@ def generate_turtle(heroes_data: dict,
                 tag_labels.append(resolved)
 
     out: list[str] = [TTL_PREFIXES]
+
+    # ================================================================
+    # SCHEMA  (class IRIs declared once, so every `a nydus:Foo` triple
+    # has a resolvable target — closes 10 dangling refs found by audit)
+    # ================================================================
+    out.append(f"# {'='*60}")
+    out.append("# Schema  (class declarations)")
+    out.append(f"# {'='*60}\n")
+    for klass, label in [
+        ("Hero",             "Hero"),
+        ("Ability",          "Ability"),
+        ("AbilityProperty",  "Ability Property"),
+        ("AbilityUpgrade",   "Ability Upgrade"),
+        ("PropertyType",     "Property Type"),
+        ("PropertyCategory", "Property Category"),
+        ("ScaleFunction",    "Scale Function"),
+        ("Stat",             "Stat"),
+        ("Slot",             "Slot"),
+        ("ModifierValue",    "Modifier Value"),
+        ("Stage",            "Development Stage"),
+    ]:
+        out.append(f"nydus:{klass}  a rdfs:Class ; rdfs:label {_tstr_lang(label)} .")
+    out.append("")
 
     # ================================================================
     # PROPERTY CATEGORY NODES  (shared semantic anchors)
@@ -1191,13 +1381,16 @@ def generate_turtle(heroes_data: dict,
                         # nydus:upgradeLevel; what's left is the property.
                         pname_str = str(pname)
                         prop_core = re.sub(r"^upg\d+_", "", pname_str)
-                        prop_label = resolve_property_label(prop_core, loc)
+                        # Always emit the canonical IRI: prop_iri() falls back
+                        # to a synthetic prop:<CamelCase> for ability-specific
+                        # properties (GroundFlameDuration, etc.), so every
+                        # upgrade points to a stable IRI — no string fallback
+                        # needed.
                         ab_lines.extend([
                             f"    nydus:hasUpgrade [",
                             f"        a nydus:AbilityUpgrade ;",
-                            f"        rdfs:label {_tstr_lang(prop_label)} ;",
                             f"        nydus:upgradeLevel {_tint(tier_idx)} ;",
-                            f"        nydus:modifiesProperty {_tstr(pname_str)} ;",
+                            f"        nydus:modifiesPropertyType {prop_iri(prop_core)} ;",
                             f"        nydus:bonusValue {_tstr(str(bonus))} ;",
                             f"    ] ;",
                         ])
@@ -1218,8 +1411,16 @@ def generate_turtle(heroes_data: dict,
 
     stats_used = sorted(set(re.findall(r"stat:(\w+)", ttl_text)))
     slots_used = sorted(set(re.findall(r"slot:(\w+)", ttl_text)))
-    sfs_used_raw = sorted({s for s in re.findall(r"nydus:scaleFunction\s+\"([^\"]+)\"", ttl_text)})
+    # Scale functions are now IRI-typed (sf:Spirit Power etc.). Collect by
+    # local-name from the prefix; vocab block declares each once.
+    sfs_used = sorted(set(re.findall(r"sf:(\w+)", ttl_text)))
+    # PropertyTypes are referenced from per-ability blank nodes via
+    # propertyType / modifiesPropertyType. One canonical IRI per distinct local-name.
+    props_used = sorted(set(re.findall(r"prop:(\w+)", ttl_text)))
     mvs_used = sorted(set(re.findall(r"mv:(\w+)", ttl_text)))
+    # Development stages (stage:WIP, stage:Released, etc.) referenced via
+    # nydus:developerStage. Declare each as nydus:Stage so the IRI resolves.
+    stages_used = sorted(set(re.findall(r"stage:(\w+)", ttl_text)))
 
     # Ability IRIs referenced via slot bindings but NOT already declared with
     # rdf:type (i.e. shared innates / weapons not in sig_ability_keys). Emit a
@@ -1232,16 +1433,18 @@ def generate_turtle(heroes_data: dict,
             continue
         ability_stubs.append((a_iri_local, resolve_ability_label(ab_key, loc)))
 
-    if stats_used or slots_used or sfs_used_raw or mvs_used or ability_stubs:
+    if stats_used or slots_used or sfs_used or props_used or mvs_used or stages_used or ability_stubs:
         vocab_lines.append(f"# {'='*60}")
-        vocab_lines.append("# Vocabulary labels  (stat / slot / scale-function / modifier / shared abilities)")
+        vocab_lines.append("# Vocabulary labels  (stat / slot / scale-function / property-type / modifier / stage / shared abilities)")
         vocab_lines.append(f"# {'='*60}\n")
 
     for a_local, lbl in sorted(ability_stubs):
-        # Note: no `a nydus:Ability` — full Ability shape requires internalKey,
-        # abilityType, etc., which we don't have for shared innates. The viewer
-        # infers Ability styling from the `ability:` IRI prefix.
-        vocab_lines.append(f"ability:{a_local}  rdfs:label {_tstr_lang(lbl)} .")
+        # Type these shared-engine ability IRIs as nydus:Ability so every IRI
+        # bound via hasAbilityInSlot resolves to a typed node. The full
+        # AbilityShape (internalKey, abilityType, hasProperty) is a SHACL
+        # severity warning rather than violation — the stub is intentionally
+        # partial because the engine ability is shared across heroes.
+        vocab_lines.append(f"ability:{a_local}  a nydus:Ability ; rdfs:label {_tstr_lang(lbl)} .")
     for name in stats_used:
         lbl = resolve_stat_label(name, loc)
         vocab_lines.append(f"stat:{name}  a nydus:Stat ; rdfs:label {_tstr_lang(lbl)} .")
@@ -1251,12 +1454,23 @@ def generate_turtle(heroes_data: dict,
     for name in mvs_used:
         # Recover the original MODIFIER_VALUE_* form by searching the TTL
         vocab_lines.append(f"mv:{name}  a nydus:ModifierValue ; rdfs:label {_tstr_lang(_prettify(name))} .")
-    # Scale functions: also declare a ScaleFunction IRI per referenced sf_class
-    # so they're reachable as graph nodes, not just literals.
-    for sf_code in sfs_used_raw:
-        sf_local = sf_iri(sf_code).split(":", 1)[-1]
-        lbl = resolve_sf_label(sf_code)
+    # Scale functions: declare each referenced sf: IRI as a typed
+    # nydus:ScaleFunction with a player-vocabulary label ("Spirit Power" not
+    # "Tech Damage"). Per-hero TTL only declares the sf: IRIs it references.
+    for sf_local in sfs_used:
+        lbl = SCALE_FUNCTION_LABELS.get(sf_local) or _prettify(sf_local)
         vocab_lines.append(f"sf:{sf_local}  a nydus:ScaleFunction ; rdfs:label {_tstr_lang(lbl)} .")
+    # Canonical PropertyType IRIs: each distinct prop:<name> referenced from
+    # propertyType / modifiesPropertyType edges declared once per file. Labels
+    # come from PROPERTY_TYPE_LABELS where curated; otherwise prettified.
+    for p_local in props_used:
+        lbl = PROPERTY_TYPE_LABELS.get(p_local) or _prettify(p_local)
+        vocab_lines.append(f"prop:{p_local}  a nydus:PropertyType ; rdfs:label {_tstr_lang(lbl)} .")
+    # Development stage IRIs (stage:WIP, stage:Released, etc.). Without these
+    # declarations any Hero with `nydus:developerStage stage:X` left a dangling
+    # IRI ref. The audit caught this — every IRI now resolves.
+    for stg_local in stages_used:
+        vocab_lines.append(f"stage:{stg_local}  a nydus:Stage ; rdfs:label {_tstr_lang(_prettify(stg_local))} .")
 
     if vocab_lines:
         vocab_lines.append("")
