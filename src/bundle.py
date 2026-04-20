@@ -17,10 +17,9 @@ import html
 import json
 from pathlib import Path
 
-ROOT       = Path(__file__).parent.parent
-VIEWER     = ROOT / "outputs" / "viewer"
-OUT_PATH   = ROOT / "outputs" / "nydus.html"
-PLAYER_OUT = ROOT / "outputs" / "player.html"
+ROOT     = Path(__file__).parent.parent
+VIEWER   = ROOT / "outputs" / "viewer"
+OUT_PATH = ROOT / "outputs" / "nydus.html"
 
 # Libs are inlined in dependency order.
 LIB_ORDER = [
@@ -102,51 +101,6 @@ def build() -> None:
     print(f"Wrote {OUT_PATH} ({size_kb:.1f} KB)")
     print(f"  {hero_count} heroes inlined")
     print(f"  Open directly (file://) or drop on any static host.")
-
-    build_player(css, graphs)
-
-
-def build_player(viewer_css: str, graphs_json: str) -> None:
-    """Bundle player.html the same way: inline css + bundle data + player.js.
-
-    No external network calls happen at build time — the player profile fetches
-    deadlock-api.com client-side at view time. The bundle exists so a single
-    file works on file:// and as a Pages drop-in.
-    """
-    player_html = read_text(VIEWER / "player.html")
-    player_js   = read_text(VIEWER / "player.js")
-    player_css  = read_text(VIEWER / "player.css")
-
-    skip_tokens = (
-        'href="styles.css"',
-        'href="player.css"',
-        'src="player.js"',
-    )
-    lines = []
-    for line in player_html.splitlines():
-        if any(tok in line for tok in skip_tokens):
-            continue
-        lines.append(line)
-    stripped = "\n".join(lines)
-
-    # Inline CSS = base styles + player styles. We omit the cytoscape libs
-    # entirely; the player profile is HTML/CSS only — graph utility surfaces
-    # as derived prose, not as a Cytoscape canvas.
-    inline_style  = f"<style>\n{viewer_css}\n{player_css}\n</style>"
-    bundle_script = (
-        "<script>\n"
-        f"window.__NYDUS_BUNDLE__ = {graphs_json};\n"
-        "</script>\n"
-        f"<script>\n{player_js}\n</script>"
-    )
-
-    stripped = stripped.replace("</head>", f"{inline_style}\n</head>", 1)
-    stripped = stripped.replace("</body>", f"{bundle_script}\n</body>", 1)
-
-    PLAYER_OUT.write_text(stripped, encoding="utf-8")
-    size_kb = PLAYER_OUT.stat().st_size / 1024
-    print(f"Wrote {PLAYER_OUT} ({size_kb:.1f} KB)")
-    print(f"  Profile pulls live data from data.deadlock-api.com at view time.")
 
 
 if __name__ == "__main__":
