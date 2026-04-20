@@ -1214,6 +1214,29 @@ def generate_turtle(heroes_data: dict,
     out: list[str] = [TTL_PREFIXES]
 
     # ================================================================
+    # SCHEMA  (class IRIs declared once, so every `a nydus:Foo` triple
+    # has a resolvable target — closes 10 dangling refs found by audit)
+    # ================================================================
+    out.append(f"# {'='*60}")
+    out.append("# Schema  (class declarations)")
+    out.append(f"# {'='*60}\n")
+    for klass, label in [
+        ("Hero",             "Hero"),
+        ("Ability",          "Ability"),
+        ("AbilityProperty",  "Ability Property"),
+        ("AbilityUpgrade",   "Ability Upgrade"),
+        ("PropertyType",     "Property Type"),
+        ("PropertyCategory", "Property Category"),
+        ("ScaleFunction",    "Scale Function"),
+        ("Stat",             "Stat"),
+        ("Slot",             "Slot"),
+        ("ModifierValue",    "Modifier Value"),
+        ("Stage",            "Development Stage"),
+    ]:
+        out.append(f"nydus:{klass}  a rdfs:Class ; rdfs:label {_tstr_lang(label)} .")
+    out.append("")
+
+    # ================================================================
     # PROPERTY CATEGORY NODES  (shared semantic anchors)
     # ================================================================
     out.append(f"# {'='*60}")
@@ -1395,6 +1418,9 @@ def generate_turtle(heroes_data: dict,
     # propertyType / modifiesPropertyType. One canonical IRI per distinct local-name.
     props_used = sorted(set(re.findall(r"prop:(\w+)", ttl_text)))
     mvs_used = sorted(set(re.findall(r"mv:(\w+)", ttl_text)))
+    # Development stages (stage:WIP, stage:Released, etc.) referenced via
+    # nydus:developerStage. Declare each as nydus:Stage so the IRI resolves.
+    stages_used = sorted(set(re.findall(r"stage:(\w+)", ttl_text)))
 
     # Ability IRIs referenced via slot bindings but NOT already declared with
     # rdf:type (i.e. shared innates / weapons not in sig_ability_keys). Emit a
@@ -1407,16 +1433,18 @@ def generate_turtle(heroes_data: dict,
             continue
         ability_stubs.append((a_iri_local, resolve_ability_label(ab_key, loc)))
 
-    if stats_used or slots_used or sfs_used or props_used or mvs_used or ability_stubs:
+    if stats_used or slots_used or sfs_used or props_used or mvs_used or stages_used or ability_stubs:
         vocab_lines.append(f"# {'='*60}")
-        vocab_lines.append("# Vocabulary labels  (stat / slot / scale-function / property-type / modifier / shared abilities)")
+        vocab_lines.append("# Vocabulary labels  (stat / slot / scale-function / property-type / modifier / stage / shared abilities)")
         vocab_lines.append(f"# {'='*60}\n")
 
     for a_local, lbl in sorted(ability_stubs):
-        # Note: no `a nydus:Ability` — full Ability shape requires internalKey,
-        # abilityType, etc., which we don't have for shared innates. The viewer
-        # infers Ability styling from the `ability:` IRI prefix.
-        vocab_lines.append(f"ability:{a_local}  rdfs:label {_tstr_lang(lbl)} .")
+        # Type these shared-engine ability IRIs as nydus:Ability so every IRI
+        # bound via hasAbilityInSlot resolves to a typed node. The full
+        # AbilityShape (internalKey, abilityType, hasProperty) is a SHACL
+        # severity warning rather than violation — the stub is intentionally
+        # partial because the engine ability is shared across heroes.
+        vocab_lines.append(f"ability:{a_local}  a nydus:Ability ; rdfs:label {_tstr_lang(lbl)} .")
     for name in stats_used:
         lbl = resolve_stat_label(name, loc)
         vocab_lines.append(f"stat:{name}  a nydus:Stat ; rdfs:label {_tstr_lang(lbl)} .")
@@ -1438,6 +1466,11 @@ def generate_turtle(heroes_data: dict,
     for p_local in props_used:
         lbl = PROPERTY_TYPE_LABELS.get(p_local) or _prettify(p_local)
         vocab_lines.append(f"prop:{p_local}  a nydus:PropertyType ; rdfs:label {_tstr_lang(lbl)} .")
+    # Development stage IRIs (stage:WIP, stage:Released, etc.). Without these
+    # declarations any Hero with `nydus:developerStage stage:X` left a dangling
+    # IRI ref. The audit caught this — every IRI now resolves.
+    for stg_local in stages_used:
+        vocab_lines.append(f"stage:{stg_local}  a nydus:Stage ; rdfs:label {_tstr_lang(_prettify(stg_local))} .")
 
     if vocab_lines:
         vocab_lines.append("")

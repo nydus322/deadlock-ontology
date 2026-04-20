@@ -174,7 +174,11 @@ nydus:AbilityUpgradeShape
 # ============================================================
 nydus:AbilityShape
     a sh:NodeShape ;
-    sh:targetClass nydus:Ability ;
+    # Target full abilities only — i.e. those that declare an abilityType
+    # (every signature/innate/weapon ability does; engine-shared stubs like
+    # Jump/Mantle don't). Stubs are still typed nydus:Ability so they appear
+    # typed in queries, but they bypass the strict per-hero metadata shape.
+    sh:targetSubjectsOf nydus:abilityType ;
     sh:property [
         sh:path rdfs:label ;
         sh:minCount 1 ;
