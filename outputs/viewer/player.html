@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Nydus — Player Profile</title>
+
+  <meta property="og:title" content="Nydus — Deadlock Player Profile">
+  <meta property="og:description" content="Playstyle analysis for any Deadlock player, derived from the canonical Nydus ontology.">
+  <meta property="og:type" content="profile">
+  <meta name="theme-color" content="#12100e">
+
+  <link rel="stylesheet" href="styles.css">
+  <link rel="stylesheet" href="player.css">
+</head>
+<body class="player-page">
+  <header>
+    <div class="title">
+      <a href="nydus.html" class="nydus-mark" style="text-decoration:none">Nydus</a>
+      <span class="subtitle">player profile</span>
+    </div>
+    <div class="actions">
+      <input type="text" id="p-id-input" placeholder="SteamID64 or SteamID3" autocomplete="off">
+      <button id="p-go">Look up</button>
+    </div>
+  </header>
+
+  <main class="player-main">
+    <div id="p-loading" class="p-status">Loading <span id="p-id-display"></span>&hellip;</div>
+
+    <div id="p-instructions" class="p-status" hidden>
+      <h2>Open a player profile</h2>
+      <p>Paste a Steam ID into the box above and hit <b>Look up</b>, or share a link of the form:</p>
+      <p><code>player.html?id=76561198021451095</code></p>
+      <p class="p-note">Steam handles privacy. Public Steam profiles with Deadlock match history will resolve; private profiles won't.</p>
+    </div>
+
+    <div id="p-error" class="p-status p-status-error" hidden></div>
+
+    <div id="p-content" hidden>
+      <section class="p-hero-header">
+        <div class="p-hero-rank">
+          <div class="p-rank-label">Current rank</div>
+          <div id="p-rank" class="p-rank-value">—</div>
+          <div id="p-account-id" class="p-account-id">—</div>
+        </div>
+        <div class="p-archetype-block">
+          <div class="p-archetype-label">Playstyle archetype</div>
+          <h1 id="p-archetype" class="p-archetype-value">—</h1>
+        </div>
+        <div class="p-totals">
+          <div class="p-totals-row">
+            <span class="k">Matches</span>  <span class="v" id="p-matches">—</span>
+          </div>
+          <div class="p-totals-row">
+            <span class="k">Hours</span>    <span class="v" id="p-hours">—</span>
+          </div>
+          <div class="p-totals-row">
+            <span class="k">Win rate</span> <span class="v" id="p-winrate">—</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="p-insights-section">
+        <h3>What the graph says about you</h3>
+        <ul id="p-insights" class="p-insights"></ul>
+      </section>
+
+      <div class="p-two-col">
+        <section class="p-bars-section">
+          <h3>Property gravity <span class="p-vs">you vs. roster baseline</span></h3>
+          <div id="p-prop-bars" class="p-bars"></div>
+        </section>
+        <section class="p-bars-section">
+          <h3>Scaling preference <span class="p-vs">you vs. roster baseline</span></h3>
+          <div id="p-sf-bars" class="p-bars"></div>
+        </section>
+      </div>
+
+      <section>
+        <h3>Hero affinity <span class="p-vs">top heroes by playtime</span></h3>
+        <div id="p-hero-grid" class="p-hero-grid-wrap"></div>
+      </section>
+
+      <section>
+        <h3>Recent matches</h3>
+        <ul id="p-matches-list" class="p-matches-list"></ul>
+      </section>
+
+      <footer class="p-footer">
+        <p>Match data via <a href="https://deadlock-api.com" target="_blank" rel="noopener">deadlock-api.com</a> &middot; ontology by Nydus &middot; <a href="nydus.html">browse the canonical hero kits</a>.</p>
+      </footer>
+    </div>
+  </main>
+
+  <script src="player.js"></script>
+  <script>
+    document.getElementById('p-go').addEventListener('click', () => {
+      const v = document.getElementById('p-id-input').value.trim();
+      if (v) location.search = '?id=' + encodeURIComponent(v);
+    });
+    document.getElementById('p-id-input').addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') document.getElementById('p-go').click();
+    });
+  </script>
+</body>
+</html>

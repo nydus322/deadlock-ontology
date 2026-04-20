@@ -1,0 +1,306 @@
+/* Nydus — Player profile styles.
+   Borrows the warm-charcoal/brass palette from the hero card view.
+   Layout shapes: op.gg / Stratz / Spotify Wrapped. */
+
+body.player-page main.player-main {
+  display: block;
+  overflow-y: auto;
+  padding: 28px 36px 80px;
+  background:
+    radial-gradient(ellipse at top, rgba(232,116,58,0.08), transparent 60%),
+    linear-gradient(180deg, var(--bg) 0%, var(--bg-elev) 100%);
+}
+
+#p-id-input {
+  background: var(--bg-elev-2);
+  color: var(--fg);
+  border: 1px solid var(--border);
+  border-radius: 4px;
+  padding: 5px 9px;
+  font-family: "Fira Code", Menlo, Consolas, monospace;
+  font-size: 12px;
+  width: 220px;
+}
+#p-id-input::placeholder { color: var(--fg-soft); }
+#p-go {
+  background: var(--accent);
+  color: var(--bg);
+  border: none;
+  padding: 6px 14px;
+  font-weight: 600;
+  border-radius: 4px;
+  cursor: pointer;
+  margin-left: 6px;
+}
+
+.p-status {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--fg-muted);
+  font-size: 14px;
+  letter-spacing: 0.04em;
+}
+.p-status h2 {
+  color: var(--fg);
+  font-family: "Cinzel", Georgia, serif;
+  font-size: 28px;
+  font-weight: 600;
+  letter-spacing: 0.06em;
+  margin-bottom: 16px;
+}
+.p-status code {
+  background: var(--bg-elev-2);
+  padding: 4px 10px;
+  border-radius: 3px;
+  font-size: 12px;
+  color: var(--accent);
+}
+.p-status-error {
+  color: #d97a6a;
+  border: 1px solid #4a2820;
+  border-radius: 6px;
+  background: rgba(120, 40, 30, 0.15);
+  padding: 28px;
+  max-width: 640px;
+  margin: 60px auto;
+}
+.p-note { font-size: 11px; color: var(--fg-soft); margin-top: 16px; }
+
+/* ===== Hero header (Spotify-Wrapped-style showpiece) ===== */
+.p-hero-header {
+  display: grid;
+  grid-template-columns: 220px 1fr 220px;
+  gap: 32px;
+  align-items: center;
+  background: linear-gradient(180deg, var(--bg-elev) 0%, var(--bg-elev-2) 100%);
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--accent-warm);
+  border-radius: 8px;
+  padding: 32px;
+  margin-bottom: 32px;
+}
+.p-hero-rank, .p-totals { display: flex; flex-direction: column; gap: 4px; }
+.p-rank-label, .p-archetype-label, .p-totals-row .k {
+  font-size: 10px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--accent-warm);
+  font-weight: 600;
+}
+.p-rank-value {
+  font-family: "Cinzel", Georgia, serif;
+  font-size: 28px;
+  color: var(--fg);
+  letter-spacing: 0.04em;
+  font-weight: 600;
+}
+.p-account-id { color: var(--fg-soft); font-size: 11px; font-family: "Fira Code", Menlo, monospace; margin-top: 2px; }
+
+.p-archetype-block { text-align: center; }
+.p-archetype-value {
+  font-family: "Cinzel", Georgia, serif;
+  font-size: 48px;
+  font-weight: 600;
+  letter-spacing: 0.03em;
+  color: var(--fg);
+  margin: 6px 0 0;
+  text-shadow: 0 0 32px rgba(232, 116, 58, 0.2);
+}
+
+.p-totals { align-items: flex-end; }
+.p-totals-row { display: grid; grid-template-columns: auto auto; gap: 12px; align-items: baseline; }
+.p-totals-row .v {
+  font-family: "Fira Code", Menlo, monospace;
+  font-size: 18px;
+  color: var(--fg);
+  font-weight: 600;
+  text-align: right;
+  min-width: 70px;
+}
+
+/* ===== Insights ===== */
+.p-insights-section { margin-bottom: 28px; }
+.p-insights-section h3, .p-bars-section h3, body.player-page main h3 {
+  font-size: 11px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: var(--accent);
+  margin: 0 0 12px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--border);
+  font-weight: 600;
+}
+.p-vs {
+  text-transform: none;
+  letter-spacing: 0.04em;
+  color: var(--fg-soft);
+  font-weight: 400;
+  font-size: 11px;
+  margin-left: 10px;
+}
+.p-insights {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 8px;
+}
+.p-insights li {
+  background: var(--bg-elev);
+  border-left: 3px solid var(--accent);
+  padding: 12px 16px;
+  font-size: 13px;
+  line-height: 1.55;
+  color: var(--fg);
+  border-radius: 0 4px 4px 0;
+}
+.p-insights b { color: var(--accent-warm); font-weight: 600; }
+
+/* ===== Two-column comparison-bar layout ===== */
+.p-two-col {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 32px;
+  margin-bottom: 28px;
+}
+.p-bars { display: grid; gap: 8px; }
+.p-bar-row {
+  display: grid;
+  grid-template-columns: 130px 1fr 50px;
+  gap: 10px;
+  align-items: center;
+  font-size: 12px;
+}
+.p-bar-label { color: var(--fg); }
+.p-over  { color: #7fc48a; font-size: 10px; margin-left: 4px; font-weight: 600; }
+.p-under { color: #d97a6a; font-size: 10px; margin-left: 4px; font-weight: 600; }
+.p-bar-track {
+  position: relative;
+  height: 14px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 2px;
+  overflow: hidden;
+}
+.p-bar-baseline {
+  position: absolute; left: 0; top: 0;
+  height: 100%;
+  background: var(--fg-soft);
+  opacity: 0.45;
+}
+.p-bar-you {
+  position: absolute; left: 0; top: 0;
+  height: 100%;
+  background: var(--accent-warm);
+  opacity: 0.95;
+  border-right: 1px solid #f4b07a;
+}
+.p-bar-pct {
+  text-align: right;
+  font-family: "Fira Code", Menlo, monospace;
+  font-size: 11px;
+  color: var(--fg-muted);
+}
+
+/* ===== Hero affinity grid ===== */
+.p-hero-grid-wrap {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
+  gap: 14px;
+  margin-bottom: 28px;
+}
+.p-hero-card {
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-top: 2px solid var(--accent);
+  border-radius: 4px;
+  padding: 14px 16px;
+}
+.p-hero-card .p-hero-name {
+  font-family: "Cinzel", Georgia, serif;
+  font-size: 16px;
+  font-weight: 600;
+  color: var(--fg);
+  margin-bottom: 8px;
+}
+.p-hero-card .p-hero-grid {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 12px;
+  font-size: 11px;
+}
+.p-hero-card .k {
+  color: var(--fg-muted);
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  font-size: 10px;
+}
+.p-hero-card .v {
+  color: var(--fg);
+  font-family: "Fira Code", Menlo, monospace;
+  text-align: right;
+  font-size: 12px;
+}
+
+/* ===== Recent matches list ===== */
+.p-matches-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: grid;
+  gap: 4px;
+}
+.p-match-row {
+  display: grid;
+  grid-template-columns: 28px 1fr 100px 60px 100px;
+  gap: 12px;
+  align-items: center;
+  padding: 8px 12px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 3px;
+  font-size: 12px;
+}
+.p-match-row.p-win  { border-left: 3px solid #7fc48a; }
+.p-match-row.p-loss { border-left: 3px solid #d97a6a; }
+.p-match-result {
+  font-weight: 700;
+  font-family: "Cinzel", Georgia, serif;
+  font-size: 16px;
+}
+.p-match-row.p-win .p-match-result  { color: #7fc48a; }
+.p-match-row.p-loss .p-match-result { color: #d97a6a; }
+.p-match-hero {
+  color: var(--fg);
+  font-weight: 500;
+  border-left: 2px solid var(--fg-soft);
+  padding-left: 10px;
+}
+.p-match-kda {
+  font-family: "Fira Code", Menlo, monospace;
+  color: var(--fg-muted);
+}
+.p-match-dur, .p-match-date {
+  font-family: "Fira Code", Menlo, monospace;
+  color: var(--fg-soft);
+  font-size: 11px;
+  text-align: right;
+}
+
+.p-footer {
+  margin-top: 48px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  text-align: center;
+  color: var(--fg-soft);
+  font-size: 11px;
+}
+.p-footer a { color: var(--accent); text-decoration: none; }
+.p-footer a:hover { color: var(--accent-warm); }
+
+@media (max-width: 900px) {
+  .p-hero-header { grid-template-columns: 1fr; gap: 16px; text-align: center; }
+  .p-totals { align-items: center; }
+  .p-archetype-value { font-size: 32px; }
+  .p-two-col { grid-template-columns: 1fr; }
+}

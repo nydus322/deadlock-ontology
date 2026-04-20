@@ -21,10 +21,14 @@ desktop.ini
 upload.out
 
 # Intermediate pipeline outputs — regenerable from src/ + a Deadlock install.
-# Per-hero TTLs and the dev viewer assets are not tracked; only the final
-# self-contained bundle (outputs/nydus.html) is committed for GitHub Pages.
+# Per-hero TTLs are not tracked; the bundled HTML (outputs/*.html) is the
+# consumer-facing artifact GitHub Pages serves.
 outputs/heroes/
-outputs/viewer/
+
+# The viewer source (HTML/CSS/JS/lib) IS tracked — bundle.py reads it.
+# Only the generated Cytoscape JSON is ignored.
+outputs/viewer/graphs.json
+outputs/viewer/graph.json
 
 # Dev / pipeline scratch outputs (regenerable, not consumer-facing)
 outputs/roster.jsonl
