@@ -20,13 +20,11 @@ Thumbs.db
 desktop.ini
 upload.out
 
-# Generated outputs — regenerable from src/ via the pipeline.
-# Heroes, viewer, and bundled HTML are NOT tracked; the source code +
-# Deadlock vdata is the canonical input. Run graph_builder.py +
-# ttl_to_cytoscape.py + bundle.py to materialise them locally.
+# Intermediate pipeline outputs — regenerable from src/ + a Deadlock install.
+# Per-hero TTLs and the dev viewer assets are not tracked; only the final
+# self-contained bundle (outputs/nydus.html) is committed for GitHub Pages.
 outputs/heroes/
 outputs/viewer/
-outputs/nydus.html
 
 # Dev / pipeline scratch outputs (regenerable, not consumer-facing)
 outputs/roster.jsonl
